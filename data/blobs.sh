@@ -1,0 +1,1 @@
+python blob2d.py 10000 2 10
