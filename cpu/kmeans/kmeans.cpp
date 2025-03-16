@@ -1,3 +1,7 @@
+// ALl the metrics are calculated by the double
+// TDIST indicates the type for main computations - 
+// while TSTORAGE indicates the data storage type.
+
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -12,16 +16,17 @@
 
 const bool USE_FIXED_SEED = true; // Set to false to use std::random_device
 
-template<class TDIST>
+// There are 25 TDIST variables, 6 TSTORAGE variables
+template<class TDIST, class TSTORAGE>
 class KMeans {
 private:
     int numPoints;           // Number of data points
     int numFeatures;         // Number of features (dimensions)
     int k;                   // Number of clusters
-    std::vector<double> data; // 1D vector storing data in row-major order
+    std::vector<TSTORAGE> data; // 1D vector storing data in row-major order
     std::vector<int> labels;  // Cluster assignment for each point
     std::vector<int> groundTruth; // Ground truth labels
-    std::vector<double> centroids; // Centroids in 1D (k * numFeatures)
+    std::vector<TSTORAGE> centroids; // Centroids in 1D (k * numFeatures)
     double runtime;          // Runtime in seconds
     unsigned int seed;       // Random seed for reproducibility
     bool useFixedSeed;       // Flag to determine if a fixed seed is used
@@ -114,10 +119,10 @@ public:
             return false;
         }
 
-        std::vector<std::vector<double>> tempData;
+        std::vector<std::vector<TSTORAGE>> tempData;
         std::string line;
         while (std::getline(file, line)) {
-            std::vector<double> point;
+            std::vector<TSTORAGE> point;
             std::stringstream ss(line);
             std::string value;
 
@@ -472,9 +477,10 @@ public:
     }
 
     const std::vector<int>& getLabels() const { return labels; }
-    const std::vector<double>& getCentroids() const { return centroids; }
+    const std::vector<TSTORAGE>& getCentroids() const { return centroids; }
     double getRuntime() const { return runtime; }
 };
+
 
 int main(int argc, char *argv[]) {
     size_t K(2), NUM_FEATURES(2);
@@ -492,7 +498,7 @@ int main(int argc, char *argv[]) {
     }
     
     // Initialize KMeans with a fixed seed
-    KMeans<double> kmeans(K, NUM_FEATURES, SEED, USE_FIXED_SEED);
+    KMeans<float, float> kmeans(K, NUM_FEATURES, SEED, USE_FIXED_SEED);
 
     // Read data and ground truth
     if (!kmeans.readData("../../data/blobs/X_2d_10.csv")) {
