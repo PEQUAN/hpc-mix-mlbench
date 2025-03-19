@@ -7,8 +7,8 @@
 #include <chrono>
 #include <cmath>
 
-// Assuming same Node structure as before
-struct Node {
+
+struct Node { // Node structure
     bool is_leaf = false;
     int class_label = -1;
     double split_value = 0.0;
@@ -188,7 +188,7 @@ void write_predictions(const std::vector<DataPoint>& data,
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     // Read data from CSV (assuming format: feature1,feature2,...,label)
     std::vector<DataPoint> data = read_csv("../data/iris/iris.csv");
     
