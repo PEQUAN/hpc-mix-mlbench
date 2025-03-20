@@ -3,7 +3,6 @@ import pandas as pd
 from sklearn.metrics.pairwise import euclidean_distances
 
 if __name__ == "__main__":
-    # Parameters
     n_samples = 1000    # Number of data points in dataset
     n_features = 10    # Dimensionality of each point
     n_queries = 50      # Number of query points
@@ -24,20 +23,13 @@ if __name__ == "__main__":
     distances = euclidean_distances(queries, dataset)  # Shape: (n_queries, n_samples)
     ground_truth_indices = np.argsort(distances, axis=1)[:, :k]  # Top k indices per query
 
-    # Convert to float32 or float64 (choose one based on your C++ precision)
-    # Use float64 (double) by default; comment/uncomment for float32 (single)
     dataset = dataset.astype(np.float64)
     queries = queries.astype(np.float64)
     ground_truth_indices = ground_truth_indices.astype(int)
 
-    # Alternative: Use float32
-    # dataset = dataset.astype(np.float32)
-    # queries = queries.astype(np.float32)
-
-    # Write to CSV files
-    pd.DataFrame(dataset).to_csv("query/dataset.csv", index=False, header=False)
-    pd.DataFrame(queries).to_csv("query/queries.csv", index=False, header=False)
-    pd.DataFrame(ground_truth_indices).to_csv("query/ground_truth.csv", index=False, header=False)
+    pd.DataFrame(dataset).to_csv("dataset.csv", index=False, header=False)
+    pd.DataFrame(queries).to_csv("queries.csv", index=False, header=False)
+    pd.DataFrame(ground_truth_indices).to_csv("ground_truth.csv", index=False, header=False)
 
     print(f"Generated dataset.csv: {n_samples} samples, {n_features} features")
     print(f"Generated queries.csv: {n_queries} queries, {n_features} features")

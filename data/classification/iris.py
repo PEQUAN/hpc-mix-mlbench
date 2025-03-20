@@ -11,4 +11,4 @@ if __name__ == "__main__":
 
     X_new = np.hstack((X, y.reshape(-1, 1)))
     X_new = pd.DataFrame(X_new, columns=list(iris.feature_names)+['label'])
-    X_new.to_csv("iris/iris.csv")
+    X_new.to_csv("iris.csv")
