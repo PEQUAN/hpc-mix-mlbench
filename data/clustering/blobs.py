@@ -2,12 +2,14 @@ import pandas as pd
 import sys
 from sklearn.datasets import make_blobs
 import os
+import numpy as np
+
 
 if __name__ == "__main__":
-    if not os.path.isdir('./blobs'):
-        os.mkdir('./blobs') 
-    else:
-        print("Folder already existed")
+    # if not os.path.isdir('./blobs'):
+    #    os.mkdir('./blobs') 
+    #else:
+    #    print("Folder already existed")
 
     num = int(sys.argv[1])
     dim = int(sys.argv[2])
@@ -22,4 +24,8 @@ if __name__ == "__main__":
     print("y:\n", y[:5])
     pd.DataFrame(X).to_csv(f"X_{dim}d_{n_clusters}.csv", index=False, header=False)
     pd.DataFrame(y).to_csv(f"y_{dim}d_{n_clusters}.csv", index=False, header=False)
+
+    X_new = np.hstack((X, y.reshape(-1, 1)))
+    X_new = pd.DataFrame(X_new)
+    pd.DataFrame(X_new).to_csv(f"X_{dim}d_{n_clusters}_include_y.csv", index=True, header=True)
     

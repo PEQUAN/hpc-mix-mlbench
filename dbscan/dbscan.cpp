@@ -252,7 +252,7 @@ void write_predictions(const std::vector<DataPoint>& data,
 }
 
 int main() {
-    std::vector<DataPoint> raw_data = read_csv("../data/blobs/X_20d_10.csv");
+    std::vector<DataPoint> raw_data = read_csv("../data/clustering/X_20d_10.csv");
     std::vector<DataPoint> data = scale_features(raw_data);
     
     DBSCAN dbscan(0.6, 12);

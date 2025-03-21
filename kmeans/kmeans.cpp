@@ -502,10 +502,10 @@ int main(int argc, char *argv[]) {
     KMeans<float, float> kmeans(K, NUM_FEATURES, SEED, USE_FIXED_SEED);
 
     // Read data and ground truth
-    if (!kmeans.readData("../data/blobs/X_2d_10.csv")) {
+    if (!kmeans.readData("../data/clustering/X_2d_10.csv")) {
         return 1;
     }
-    if (!kmeans.readGroundTruth("../data/blobs/y_2d_10.csv")) {
+    if (!kmeans.readGroundTruth("../data/clustering/y_2d_10.csv")) {
         return 1;
     }
 
