@@ -1,5 +1,13 @@
 # DATA FORMAT
 
+
+THe MIX-HPC-ML benchmarks mainly contain three kinds of dataset:
+
+* classification
+* clustering
+* regression
+
+
 csv file
 
 ```
