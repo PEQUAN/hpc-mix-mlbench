@@ -89,7 +89,6 @@ public:
     }
 };
 
-// Corrected Adjusted Mutual Information
 double adjusted_mutual_information(const std::vector<int>& true_labels, 
                                  const std::vector<int>& pred_labels) {
     int n = true_labels.size();
