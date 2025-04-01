@@ -71,16 +71,16 @@ public:
         __PROMISE__ max_log_prob = -std::numeric_limits<__PROMISE__>::infinity();
         int best_class = -1;
         
-        // Calculate log probability for each class
         for (const auto& prior : class_priors) {
             int label = prior.first;
-            __PROMISE__ log_prob = log(prior.second);  // log(P(class))
+            __PROMISE__ log_prob = log(prior.second); 
             
             for (size_t i = 0; i < features.size(); ++i) {
                 __PROMISE__ prob = gaussian_pdf(features[i], 
                                         class_means[label][i], 
                                         class_variances[label][i]);
-                log_prob += log(prob);  // Use log to prevent underflow
+                log_prob += log(prob); 
+                PROMISE_CHECK_VAR(prob);
             }
             
             if (log_prob > max_log_prob) {
@@ -169,7 +169,7 @@ int main() {
     
     double accuracy = static_cast<double>(correct) / test_data.size() * 100;
     
-    PROMISE_CHECK_VAR(accuracy);
+    
     std::cout << "Accuracy: " << accuracy << "%" << std::endl;
     
     return 0;

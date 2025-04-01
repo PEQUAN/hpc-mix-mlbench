@@ -1,7 +1,7 @@
-03/30 22:12:18: 🤘 cadnaPromise 🤘
-03/30 22:12:18: Using the compiler: g++
-03/30 22:12:18: We are working with 1 file and 18 different types
-03/30 22:12:18: The expectation is 3 digits.
-03/30 22:12:18: a) Get a reference result with cadna (double)
-03/30 22:12:22: b) Check with highest format (Double)
-03/30 22:12:23: You should lower your expectation, it doesn't work with Double
+04/01 14:42:55: 🤘 cadnaPromise 🤘
+04/01 14:42:55: Using the compiler: g++
+04/01 14:42:55: We are working with 1 file and 18 different types
+04/01 14:42:55: The expectation is 3 digits.
+04/01 14:42:55: a) Get a reference result with cadna (double)
+04/01 14:42:58: b) Check with highest format (Double)
+04/01 14:42:59: c) Delta-Debug Single/Double

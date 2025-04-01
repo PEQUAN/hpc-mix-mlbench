@@ -96,12 +96,10 @@ double adjusted_mutual_information(const std::vector<int>& true_labels,
 
     std::unordered_map<int, std::unordered_map<int, int>> contingency;
     
-    // Build contingency table
     for (int i = 0; i < n; ++i) {
         contingency[true_labels[i]][pred_labels[i]]++;
     }
     
-    // Calculate marginal sums
     std::unordered_map<int, int> a_sums, b_sums;
     for (const auto& row : contingency) {
         for (const auto& cell : row.second) {
@@ -110,7 +108,6 @@ double adjusted_mutual_information(const std::vector<int>& true_labels,
         }
     }
     
-    // Mutual Information (MI)
     double mi = 0.0;
     double log_n = log(n);
     for (const auto& row : contingency) {
@@ -120,14 +117,13 @@ double adjusted_mutual_information(const std::vector<int>& true_labels,
             double ai = a_sums[row.first];
             double bj = b_sums[cell.first];
             double denom = ai * bj;
-            if (denom > 0) {  // Avoid log(0) or division by 0
-                mi += nij * log(nij * n / denom + 1e-10);  // Add small epsilon
+            if (denom > 0) {  
+                mi += nij * log(nij * n / denom + 1e-10); 
             }
         }
     }
-    mi = (mi > 0 ? mi / (n * log(2.0)) : 0);  // Convert to base 2
+    mi = (mi > 0 ? mi / (n * log(2.0)) : 0);  
 
-    // Entropy of true labels (H(A))
     double h_true = 0.0;
     for (const auto& a : a_sums) {
         double p = a.second / (double)n;
@@ -147,13 +143,11 @@ double adjusted_mutual_information(const std::vector<int>& true_labels,
     double emi = 0.0;  // Could compute more precisely, but often small
     double max_mi = (h_true + h_pred) / 2.0;
 
-    // AMI calculation with protection against NaN
     double denom = max_mi - emi + 1e-10;
     if (denom <= 0) return 0.0;
     return (mi - emi) / denom;
 }
 
-// Adjusted Rand Index (unchanged, as it typically works fine)
 double adjusted_rand_index(const std::vector<int>& true_labels, 
                          const std::vector<int>& pred_labels) {
     int n = true_labels.size();

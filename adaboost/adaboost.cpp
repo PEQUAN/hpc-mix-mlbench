@@ -19,7 +19,6 @@ struct DecisionStump {
     double polarity;
     double alpha;
     
-    // Marked as const to allow calling on const objects
     int predict(const std::vector<double>& features) const {
         double value = features[feature_index];
         return (polarity * (value < threshold ? -1 : 1));
@@ -140,7 +139,7 @@ std::vector<DataPoint> read_csv(const std::string& filename) {
     std::vector<DataPoint> data;
     std::ifstream file(filename);
     std::string line;
-    getline(file, line);  // Skip header
+    getline(file, line); 
     
     while (getline(file, line)) {
         std::stringstream ss(line);

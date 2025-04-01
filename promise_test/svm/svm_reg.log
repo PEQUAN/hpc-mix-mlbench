@@ -1,9 +1,9 @@
-04/01 10:22:45: 🤘 cadnaPromise 🤘
-04/01 10:22:45: Using the compiler: g++
-04/01 10:22:45: We are working with 1 file and 33 different types
-04/01 10:22:45: The expectation is 12 digits.
-04/01 10:22:45: a) Get a reference result with cadna (double)
-04/01 10:22:48: svm_reg.cpp: In member function ‘void SVMRegressor::fit(const std::vector<DataPoint>&)’:
+04/01 14:43:43: 🤘 cadnaPromise 🤘
+04/01 14:43:43: Using the compiler: g++
+04/01 14:43:43: We are working with 1 file and 33 different types
+04/01 14:43:43: The expectation is 12 digits.
+04/01 14:43:43: a) Get a reference result with cadna (double)
+04/01 14:43:46: svm_reg.cpp: In member function ‘void SVMRegressor::fit(const std::vector<DataPoint>&)’:
 svm_reg.cpp:59:29: error: call of overloaded ‘abs(double_st&)’ is ambiguous
    59 |                 if (std::abs(error) > epsilon) {
       |                     ~~~~~~~~^~~~~~~
@@ -71,5 +71,5 @@ svm_reg.cpp:65:44: error: call of overloaded ‘abs(double_st&)’ is ambiguous
   137 |   abs(__float128 __x)
       |   ^~~
 
-04/01 10:22:48: Compilation failed
+04/01 14:43:46: Compilation failed
 Is Cadna installed? Did you link your cade with Cadna with `-lcadnac`, `-L$CADNA_PATH/lib` and `-I$CADNA_PATH/include` ?

@@ -8,7 +8,6 @@
 #include <numeric>
 #include <algorithm>
 
-// Simple matrix class for 2D operations
 class Matrix {
 private:
     std::vector<double> data;
@@ -258,7 +257,6 @@ double compute_accuracy(const std::vector<DataPoint>& data, const std::vector<in
     }
     if (!has_labels) return -1.0;
 
-    // Simple accuracy: max matching after permutation (for 2 clusters as example)
     int correct = 0;
     for (int i = 0; i < n; ++i) {
         if (true_labels[i] == labels[i]) correct++;
