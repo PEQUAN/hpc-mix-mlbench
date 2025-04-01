@@ -12,8 +12,8 @@
 using namespace std;
 using namespace std::chrono;
 
-vector<__PROMISE__> readCSV(const string& filename, int& rows, int& cols) {
-    vector<__PROMISE__> data;
+vector<float> readCSV(const string& filename, int& rows, int& cols) {
+    vector<float> data;
     
     ifstream file(filename);
     if (!file.is_open()) {
@@ -30,7 +30,7 @@ vector<__PROMISE__> readCSV(const string& filename, int& rows, int& cols) {
     while (getline(file, line)) {
         stringstream ss(line);
         string value;
-        vector<__PROMISE__> row;
+        vector<float> row;
         
         // Skip the first column (empty in header, index in data rows)
         getline(ss, value, ',');
@@ -83,7 +83,7 @@ vector<__PROMISE__> readCSV(const string& filename, int& rows, int& cols) {
     return data;
 }
 
-void writeCSV(const string& filename, const vector<__PROMISE__>& data, int rows, int cols) {
+void writeCSV(const string& filename, const vector<half_float::half>& data, int rows, int cols) {
     ofstream file(filename);
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -98,21 +98,21 @@ void writeCSV(const string& filename, const vector<__PROMISE__>& data, int rows,
 
 struct Neighbor { // Structure for priority queue (max-heap for largest distances)
     int index;
-    __PROMISE__ distance_sq;
+    float distance_sq;
     bool operator<(const Neighbor& other) const {
         return distance_sq < other.distance_sq; // Max-heap
     }
 };
 
-vector<pair<int, __PR_1__>> kNearestNeighborSearch(const vector<__PR_1__>& data, int n_samples, int n_features,
-                                                 const vector<__PR_1__>& query, int k, __PROMISE__& runtime) {
+vector<pair<int, float>> kNearestNeighborSearch(const vector<float>& data, int n_samples, int n_features,
+                                                 const vector<float>& query, int k, float& runtime) {
     auto start = high_resolution_clock::now();
 
     priority_queue<Neighbor> pq;
     for (int i = 0; i < n_samples; i++) {
-        __PROMISE__ distance_sq = 0.0;
+        float distance_sq = 0.0;
         for (int j = 0; j < n_features; j++) {
-            __PROMISE__ diff = data[i * n_features + j] - query[j];
+            float diff = data[i * n_features + j] - query[j];
             distance_sq += diff * diff;
         }
         if (pq.size() < k) {
@@ -123,19 +123,19 @@ vector<pair<int, __PR_1__>> kNearestNeighborSearch(const vector<__PR_1__>& data,
         }
     }
 
-    vector<pair<int, __PR_1__>> k_nearest(k);
-    __PR_1__ max_val;
-    __PR_1__ top_val;
+    vector<pair<int, float>> k_nearest(k);
+    float max_val;
+    float top_val;
 
     for (int i = k - 1; i >= 0; i--) {
         top_val = pq.top().distance_sq;
-        max_val = max((__PR_1__)0.0, top_val);
+        max_val = max((float)0.0, top_val);
         k_nearest[i] = {pq.top().index, sqrt(max_val)};
         pq.pop();
     }
 
     auto end = high_resolution_clock::now();
-    runtime = static_cast<__PROMISE__>(duration_cast<microseconds>(end - start).count()) / 1000.0;
+    runtime = static_cast<half_float::half>(duration_cast<microseconds>(end - start).count()) / 1000.0;
     return k_nearest;
 }
 
@@ -143,11 +143,11 @@ int main(int argc, char *argv[]) {
     int n_samples, n_features, n_queries, n_features_q, k_gt, n_features_gt;
     int k = 3; // Default number of neighbors
 
-    cout << "Using __PROMISE__ precision" << endl;
+    cout << "Using half_float::half precision" << endl;
 
     // Read dataset
     cout << "Reading dataset..." << endl;
-    vector<__PROMISE__> data = readCSV("dataset.csv", n_samples, n_features);
+    vector<float> data = readCSV("dataset.csv", n_samples, n_features);
     if (n_samples <= 0 || n_features <= 0) {
         cerr << "Error: Invalid dataset dimensions" << endl;
         return 1;
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 
     // Read queries
     cout << "Reading queries..." << endl;
-    vector<__PROMISE__> queries = readCSV("queries.csv", n_queries, n_features_q);
+    vector<float> queries = readCSV("queries.csv", n_queries, n_features_q);
     if (n_features_q != n_features) {
         cerr << "Error: Query feature dimension mismatch" << endl;
         return 1;
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
 
     // Read ground truth
     cout << "Reading ground truth..." << endl;
-    vector<__PROMISE__> gt_data = readCSV("ground_truth.csv", k_gt, n_features_gt);
+    vector<float> gt_data = readCSV("ground_truth.csv", k_gt, n_features_gt);
     if (k_gt != n_queries || n_features_gt != k) {
         cerr << "Error: Ground truth dimensions mismatch" << endl;
         return 1;
@@ -180,23 +180,23 @@ int main(int argc, char *argv[]) {
     }
 
     // Process queries
-    vector<__PROMISE__> all_results;
-    vector<__PROMISE__> runtimes(n_queries), accuracies(n_queries);
+    vector<float> all_results;
+    vector<half_float::half> runtimes(n_queries), accuracies(n_queries);
     for (int q = 0; q < n_queries; q++) {
-        vector<__PROMISE__> query(n_features);
+        vector<float> query(n_features);
         for (int j = 0; j < n_features; j++) {
             query[j] = queries[q * n_features + j];
         }
 
-        __PROMISE__ runtime;
+        float runtime;
         auto k_nearest = kNearestNeighborSearch(data, n_samples, n_features, query, k, runtime);
         runtimes[q] = runtime;
 
-        cout << "Query " << q + 1 << " (__PROMISE__):\n";
+        cout << "Query " << q + 1 << " (half_float::half):\n";
         for (int i = 0; i < k; i++) {
             cout << "Neighbor " << i + 1 << ": Index = " << k_nearest[i].first 
                  << ", Distance = " << k_nearest[i].second << endl;
-            all_results.push_back(static_cast<__PROMISE__>(k_nearest[i].first));
+            all_results.push_back(static_cast<half_float::half>(k_nearest[i].first));
             all_results.push_back(k_nearest[i].second);
         }
 
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
-        accuracies[q] = static_cast<__PROMISE__>(correct) / k;
+        accuracies[q] = static_cast<half_float::half>(correct) / k;
 
         cout << "Runtime: " << runtime << " ms, Accuracy: " << accuracies[q] << endl;
     }

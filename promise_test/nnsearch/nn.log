@@ -1,89 +1,13 @@
-04/01 10:18:56: 🤘 cadnaPromise 🤘
-04/01 10:18:56: Using the compiler: g++
-04/01 10:18:56: We are working with 1 file and 22 different types
-04/01 10:18:56: The expectation is 12 digits.
-04/01 10:18:56: a) Get a reference result with cadna (double)
-04/01 10:18:58: nn.cpp: In function ‘std::vector<std::pair<int, double_st> > kNearestNeighborSearch(const std::vector<double_st>&, int, int, const std::vector<double_st>&, int, double_st&)’:
-nn.cpp:134:49: error: no matching function for call to ‘max(double, const double_st&)’
-  134 |         k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
-      |                                              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~
-In file included from /usr/include/c++/13/string:51,
-                 from /usr/include/c++/13/bits/locale_classes.h:40,
-                 from /usr/include/c++/13/bits/ios_base.h:41,
-                 from /usr/include/c++/13/ios:44,
-                 from /usr/include/c++/13/ostream:40,
-                 from /usr/include/c++/13/iostream:41,
-                 from /home/xinye/.local/lib/python3.10/site-packages/cadnaPromise/cadna//include/cadna.h:26,
-                 from nn.cpp:1:
-/usr/include/c++/13/bits/stl_algobase.h:257:5: note: candidate: ‘template<class _Tp> constexpr const _Tp& std::max(const _Tp&, const _Tp&)’
-  257 |     max(const _Tp& __a, const _Tp& __b)
-      |     ^~~
-/usr/include/c++/13/bits/stl_algobase.h:257:5: note:   template argument deduction/substitution failed:
-nn.cpp:134:49: note:   deduced conflicting types for parameter ‘const _Tp’ (‘double’ and ‘double_st’)
-  134 |         k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
-      |                                              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/c++/13/bits/stl_algobase.h:303:5: note: candidate: ‘template<class _Tp, class _Compare> constexpr const _Tp& std::max(const _Tp&, const _Tp&, _Compare)’
-  303 |     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-      |     ^~~
-/usr/include/c++/13/bits/stl_algobase.h:303:5: note:   template argument deduction/substitution failed:
-nn.cpp:134:49: note:   deduced conflicting types for parameter ‘const _Tp’ (‘double’ and ‘double_st’)
-  134 |         k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
-      |                                              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~
-In file included from /usr/include/c++/13/algorithm:61,
-                 from /home/xinye/.local/lib/python3.10/site-packages/cadnaPromise/cadna//include/half.hpp:245,
-                 from /home/xinye/.local/lib/python3.10/site-packages/cadnaPromise/cadna//include/cadna.h:35:
-/usr/include/c++/13/bits/stl_algo.h:5795:5: note: candidate: ‘template<class _Tp> constexpr _Tp std::max(initializer_list<_Tp>)’
- 5795 |     max(initializer_list<_Tp> __l)
-      |     ^~~
-/usr/include/c++/13/bits/stl_algo.h:5795:5: note:   template argument deduction/substitution failed:
-nn.cpp:134:49: note:   mismatched types ‘std::initializer_list<_Tp>’ and ‘double’
-  134 |         k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
-      |                                              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/include/c++/13/bits/stl_algo.h:5805:5: note: candidate: ‘template<class _Tp, class _Compare> constexpr _Tp std::max(initializer_list<_Tp>, _Compare)’
- 5805 |     max(initializer_list<_Tp> __l, _Compare __comp)
-      |     ^~~
-/usr/include/c++/13/bits/stl_algo.h:5805:5: note:   template argument deduction/substitution failed:
-nn.cpp:134:49: note:   mismatched types ‘std::initializer_list<_Tp>’ and ‘double’
-  134 |         k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
-      |                                              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~
-nn.cpp:134:77: error: no match for ‘operator=’ (operand types are ‘__gnu_cxx::__alloc_traits<std::allocator<std::pair<int, double_st> >, std::pair<int, double_st> >::value_type’ {aka ‘std::pair<int, double_st>’} and ‘<brace-enclosed initializer list>’)
-  134 |         k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
-      |                                                                             ^
-In file included from /usr/include/c++/13/bits/stl_algobase.h:64:
-/usr/include/c++/13/bits/stl_pair.h:752:9: note: candidate: ‘template<class _U1, class _U2> typename std::enable_if<std::__and_<std::is_assignable<_T1&, const _U1&>, std::is_assignable<_T2&, const _U2&> >::value, std::pair<_T1, _T2>&>::type std::pair<_T1, _T2>::operator=(const std::pair<_U1, _U2>&) [with _U2 = _U1; _T1 = int; _T2 = double_st]’
-  752 |         operator=(const pair<_U1, _U2>& __p)
-      |         ^~~~~~~~
-/usr/include/c++/13/bits/stl_pair.h:752:9: note:   template argument deduction/substitution failed:
-nn.cpp:134:77: note:   couldn’t deduce template parameter ‘_U1’
-  134 |         k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
-      |                                                                             ^
-/usr/include/c++/13/bits/stl_pair.h:763:9: note: candidate: ‘template<class _U1, class _U2> typename std::enable_if<std::__and_<std::is_assignable<_T1&, _U1&&>, std::is_assignable<_T2&, _U2&&> >::value, std::pair<_T1, _T2>&>::type std::pair<_T1, _T2>::operator=(std::pair<_U1, _U2>&&) [with _U2 = _U1; _T1 = int; _T2 = double_st]’
-  763 |         operator=(pair<_U1, _U2>&& __p)
-      |         ^~~~~~~~
-/usr/include/c++/13/bits/stl_pair.h:763:9: note:   template argument deduction/substitution failed:
-nn.cpp:134:77: note:   couldn’t deduce template parameter ‘_U1’
-  134 |         k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
-      |                                                                             ^
-/usr/include/c++/13/bits/stl_pair.h:727:7: note: candidate: ‘std::pair<_T1, _T2>& std::pair<_T1, _T2>::operator=(std::__conditional_t<std::__and_<std::is_copy_assignable<_T1>, std::is_copy_assignable<_T2> >::value, const std::pair<_T1, _T2>&, const std::__nonesuch&>) [with _T1 = int; _T2 = double_st; std::__conditional_t<std::__and_<std::is_copy_assignable<_T1>, std::is_copy_assignable<_T2> >::value, const std::pair<_T1, _T2>&, const std::__nonesuch&> = const std::pair<int, double_st>&]’
-  727 |       operator=(__conditional_t<__and_<is_copy_assignable<_T1>,
-      |       ^~~~~~~~
-/usr/include/c++/13/bits/stl_pair.h:729:65: note:   no known conversion for argument 1 from ‘<brace-enclosed initializer list>’ to ‘std::__conditional_t<true, const std::pair<int, double_st>&, const std::__nonesuch&>’ {aka ‘const std::pair<int, double_st>&’}
-  727 |       operator=(__conditional_t<__and_<is_copy_assignable<_T1>,
-      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
-  728 |                                        is_copy_assignable<_T2>>::value,
-      |                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  729 |                                 const pair&, const __nonesuch&> __p)
-      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
-/usr/include/c++/13/bits/stl_pair.h:737:7: note: candidate: ‘std::pair<_T1, _T2>& std::pair<_T1, _T2>::operator=(std::__conditional_t<std::__and_<std::is_move_assignable<_Tp>, std::is_move_assignable<_T2> >::value, std::pair<_T1, _T2>&&, std::__nonesuch&&>) [with _T1 = int; _T2 = double_st; std::__conditional_t<std::__and_<std::is_move_assignable<_Tp>, std::is_move_assignable<_T2> >::value, std::pair<_T1, _T2>&&, std::__nonesuch&&> = std::pair<int, double_st>&&]’
-  737 |       operator=(__conditional_t<__and_<is_move_assignable<_T1>,
-      |       ^~~~~~~~
-/usr/include/c++/13/bits/stl_pair.h:739:55: note:   no known conversion for argument 1 from ‘<brace-enclosed initializer list>’ to ‘std::__conditional_t<true, std::pair<int, double_st>&&, std::__nonesuch&&>’ {aka ‘std::pair<int, double_st>&&’}
-  737 |       operator=(__conditional_t<__and_<is_move_assignable<_T1>,
-      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  738 |                                        is_move_assignable<_T2>>::value,
-      |                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  739 |                                 pair&&, __nonesuch&&> __p)
-      |                                 ~~~~~~~~~~~~~~~~~~~~~~^~~
-
-04/01 10:18:58: Compilation failed
-Is Cadna installed? Did you link your cade with Cadna with `-lcadnac`, `-L$CADNA_PATH/lib` and `-I$CADNA_PATH/include` ?
+04/01 13:12:39: 🤘 cadnaPromise 🤘
+04/01 13:12:39: Using the compiler: g++
+04/01 13:12:39: We are working with 1 file and 21 different types
+04/01 13:12:39: The expectation is 12 digits.
+04/01 13:12:39: a) Get a reference result with cadna (double)
+04/01 13:12:41: b) Check with highest format (Double)
+04/01 13:12:42: c) Delta-Debug Single/Double
+04/01 13:12:43: The format float is enough for your expectation
+04/01 13:12:43: d) Delta-Debug Half/Single
+04/01 13:13:38: The final result contains 14x float and 7x half_float::half.
+04/01 13:13:38: It tooks 59.50s
+04/01 13:13:38: 👉 76 compilations (68 failed) for 53.88s
+04/01 13:13:38: 👉 8 executions   (0 failed) for 0.14s

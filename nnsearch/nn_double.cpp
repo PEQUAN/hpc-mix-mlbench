@@ -11,6 +11,47 @@
 using namespace std;
 using namespace std::chrono;
 
+
+struct Neighbor { // Structure for priority queue (max-heap for largest distances)
+    int index;
+    double distance_sq;
+    bool operator<(const Neighbor& other) const {
+        return distance_sq < other.distance_sq; // Max-heap
+    }
+};
+
+vector<pair<int, double>> kNearestNeighborSearch(const vector<double>& data, int n_samples, int n_features,
+                                                 const vector<double>& query, int k, double& runtime) {
+    auto start = high_resolution_clock::now();
+
+    priority_queue<Neighbor> pq;
+    for (int i = 0; i < n_samples; i++) {
+        double distance_sq = 0.0;
+        for (int j = 0; j < n_features; j++) {
+            double diff = data[i * n_features + j] - query[j];
+            distance_sq += diff * diff;
+        }
+        if (pq.size() < k) {
+            pq.push({i, distance_sq});
+        } else if (distance_sq < pq.top().distance_sq) {
+            pq.pop();
+            pq.push({i, distance_sq});
+        }
+    }
+
+    vector<pair<int, double>> k_nearest(k);
+    for (int i = k - 1; i >= 0; i--) {
+        k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
+        pq.pop();
+    }
+
+    auto end = high_resolution_clock::now();
+    runtime = static_cast<double>(duration_cast<microseconds>(end - start).count()) / 1000.0;
+    return k_nearest;
+}
+
+
+
 vector<double> readCSV(const string& filename, int& rows, int& cols) {
     vector<double> data;
     
@@ -94,44 +135,6 @@ void writeCSV(const string& filename, const vector<double>& data, int rows, int 
     file.close();
 }
 
-
-struct Neighbor { // Structure for priority queue (max-heap for largest distances)
-    int index;
-    double distance_sq;
-    bool operator<(const Neighbor& other) const {
-        return distance_sq < other.distance_sq; // Max-heap
-    }
-};
-
-vector<pair<int, double>> kNearestNeighborSearch(const vector<double>& data, int n_samples, int n_features,
-                                                 const vector<double>& query, int k, double& runtime) {
-    auto start = high_resolution_clock::now();
-
-    priority_queue<Neighbor> pq;
-    for (int i = 0; i < n_samples; i++) {
-        double distance_sq = 0.0;
-        for (int j = 0; j < n_features; j++) {
-            double diff = data[i * n_features + j] - query[j];
-            distance_sq += diff * diff;
-        }
-        if (pq.size() < k) {
-            pq.push({i, distance_sq});
-        } else if (distance_sq < pq.top().distance_sq) {
-            pq.pop();
-            pq.push({i, distance_sq});
-        }
-    }
-
-    vector<pair<int, double>> k_nearest(k);
-    for (int i = k - 1; i >= 0; i--) {
-        k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
-        pq.pop();
-    }
-
-    auto end = high_resolution_clock::now();
-    runtime = static_cast<double>(duration_cast<microseconds>(end - start).count()) / 1000.0;
-    return k_nearest;
-}
 
 int main(int argc, char *argv[]) {
     int n_samples, n_features, n_queries, n_features_q, k_gt, n_features_gt;
