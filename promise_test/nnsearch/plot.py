@@ -23,11 +23,8 @@ if __name__ == "__main__":
     heights = {cat: [] for cat in categories}
     for setting in precision_settings:
         for cat in categories:
-            if cat in heights and cat in setting:
-                try:
-                    heights[cat].append(len(setting[cat]))
-                except:
-                    pass
+            if cat in heights:
+                heights[cat].append(len(setting[cat]))
 
     fig, ax = plt.subplots(figsize=(8, 6))
 
@@ -46,8 +43,8 @@ if __name__ == "__main__":
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=3)
 
     for i in range(len(precision_settings)):
-        total_height = sum(heights[cat][i] for cat in categories if cat in heights)
+        total_height = sum(heights[cat][i] for cat in categories)
 
     plt.tight_layout()
-    plt.savefig('precision_dt.png', bbox_inches='tight', dpi=300)
+    plt.savefig('precision_nn.png', bbox_inches='tight', dpi=300)
     plt.show()
