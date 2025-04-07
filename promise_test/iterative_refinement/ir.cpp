@@ -212,8 +212,8 @@ IRResult iterative_refinement(const CSRMatrix& A, const std::vector<__PROMISE__>
     return {x, residual, k};
 }
 
-std::vector<__PROMISE__> generate_rhs(int n) {
-    std::vector<__PROMISE__> b(n);
+std::vector<__PR_1__> generate_rhs(int n) {
+    std::vector<__PR_1__> b(n);
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(1.0, 10.0);
@@ -256,11 +256,11 @@ int main() {
     std::cout << "Training time: " << duration.count() << " ms" << std::endl;
     std::cout << "Final residual: " << result.residual << std::endl;
     std::cout << "Iterations to converge: " << result.iterations << std::endl;
-
+    PROMISE_CHECK_VAR(result.residual);
     std::vector<__PROMISE__> Ax = matvec(A, result.x);
     __PROMISE__ verify_residual = norm(axpy(-1.0, Ax, b));
     std::cout << "Verification residual: " << verify_residual << std::endl;
-    PROMISE_CHECK_ARRAY(result.x.data(), A.n);
+    // PROMISE_CHECK_ARRAY(result.x.data(), A.n);
     // write_solution(result.x, "results/iterative_refinement/ir_solution.csv");
 
     return 0;

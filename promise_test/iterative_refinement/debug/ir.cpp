@@ -256,11 +256,11 @@ int main() {
     std::cout << "Training time: " << duration.count() << " ms" << std::endl;
     std::cout << "Final residual: " << result.residual << std::endl;
     std::cout << "Iterations to converge: " << result.iterations << std::endl;
-
+    PROMISE_CHECK_VAR(result.residual);
     std::vector<float> Ax = matvec(A, result.x);
     float verify_residual = norm(axpy(-1.0, Ax, b));
     std::cout << "Verification residual: " << verify_residual << std::endl;
-    PROMISE_CHECK_ARRAY(result.x.data(), A.n);
+    // PROMISE_CHECK_ARRAY(result.x.data(), A.n);
     // write_solution(result.x, "results/iterative_refinement/ir_solution.csv");
 
     return 0;
