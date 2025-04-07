@@ -10,7 +10,7 @@
 
 struct DataPoint {
     std::vector<double> features;
-    int label;  // Should be -1 or 1 for AdaBoost
+    int label;  // -1 or 1 for AdaBoost
 };
 
 struct DecisionStump {

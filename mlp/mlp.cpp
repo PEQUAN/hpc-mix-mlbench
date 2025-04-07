@@ -54,7 +54,7 @@ private:
     }
     
     void initialize_weights() {
-        std::mt19937 gen(seed);  // Use provided seed
+        std::mt19937 gen(seed);  
         double limit1 = sqrt(6.0 / (input_size + hidden_size));
         double limit2 = sqrt(6.0 / (hidden_size + output_size));
         std::uniform_real_distribution<> dis1(-limit1, limit1);
@@ -76,7 +76,7 @@ private:
 public:
     MLPClassifier(int in_size, int hid_size, int out_size, double lr = 0.1, unsigned int s = 42)
         : input_size(in_size), hidden_size(hid_size), output_size(out_size), 
-          learning_rate(lr), seed(s) {  // Added seed parameter with default value
+          learning_rate(lr), seed(s) {  
         initialize_weights();
     }
     
@@ -225,7 +225,6 @@ void write_predictions(const std::vector<DataPoint>& data,
 }
 
 int main() {
-    // Read and scale data
     std::vector<DataPoint> raw_data = read_csv("../data/classification/iris.csv");
     std::vector<DataPoint> data = scale_features(raw_data);
     
@@ -243,7 +242,7 @@ int main() {
     int hidden_size = (input_size + output_size);
     
     // Train with specific seed
-    unsigned int random_seed = 12345;  // You can change this value
+    unsigned int random_seed = 12345;
     MLPClassifier classifier(input_size, hidden_size, output_size, 0.01, random_seed);
     auto start = std::chrono::high_resolution_clock::now();
     classifier.fit(train_data, 200);

@@ -322,7 +322,7 @@ int main() {
         std::cout << "Accuracy: N/A (no true labels provided)" << std::endl;
     }
 
-    write_results(data, labels, probs, "gmm_output.csv");
+    write_results(data, labels, probs, "../results/gmm/gmm_output.csv");
 
     return 0;
 }

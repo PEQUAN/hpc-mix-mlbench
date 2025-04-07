@@ -26,7 +26,7 @@ std::vector<DataPoint> read_csv(const std::string& filename) {
     }
 
     std::string line;
-    getline(file, line);  // Skip header: ,feature1,feature2,...,label
+    getline(file, line); 
     
     while (getline(file, line)) {
         std::stringstream ss(line);
@@ -36,7 +36,6 @@ std::vector<DataPoint> read_csv(const std::string& filename) {
         // Skip the index column
         getline(ss, value, ',');  // Ignore the first value (index)
         
-        // Read features
         while (getline(ss, value, ',')) {
             features.push_back(std::stod(value));
         }
@@ -46,6 +45,7 @@ std::vector<DataPoint> read_csv(const std::string& filename) {
         features.pop_back();
         data.push_back({features, true_label});
     }
+    
     std::cout << "Loaded " << data.size() << " data points with "  
               << (data.empty() ? 0 : data[0].features.size()) << " features each" << std::endl;
     

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from cadnaPromise.run import runPromise
 
-method = 'bhsd'
+method = 'cwbhsd'
 
 digits = [2, 4, 6, 8, 10, 12]
 precision_settings = list()

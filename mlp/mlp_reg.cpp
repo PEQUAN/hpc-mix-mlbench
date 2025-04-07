@@ -12,7 +12,6 @@ struct DataPoint {
     double target;
 };
 
-// Forward declarations
 std::vector<DataPoint> scale_features(const std::vector<DataPoint>& data);
 std::vector<DataPoint> read_csv(const std::string& filename);
 void write_predictions(const std::vector<DataPoint>& data, 
@@ -207,7 +206,7 @@ std::vector<DataPoint> read_csv(const std::string& filename) {
                 continue;
             }
             try {
-                if (column < 11) {  // Features (age to s6)
+                if (column < 11) { 
                     features.push_back(std::stod(value));
                 } else if (column == 11) {  // Target (label)
                     target = std::stod(value);

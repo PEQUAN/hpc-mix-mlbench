@@ -124,8 +124,8 @@ public:
     }
 };
 
-// Generate a simple test system
-NBodySimulation create_test_system() {
+NBodySimulation create_test_system() { 
+    // Generate a simple test system
     NBodySimulation sim(1.0, 0.01, 0.01);  // G=1 for simplicity, dt=0.01, softening=0.01
 
     // Three-body system (scaled units)
