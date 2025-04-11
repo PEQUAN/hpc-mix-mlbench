@@ -175,7 +175,7 @@ int main() {
     double verify_residual = norm(axpy(-1.0, Ax, b));
     std::cout << "Verification residual: " << verify_residual << std::endl;
 
-    write_solution(result.x, "results/cg/cg_solution.csv");
+    write_solution(result.x, "../results/cg/cg_solution.csv");
 
     return 0;
 }
