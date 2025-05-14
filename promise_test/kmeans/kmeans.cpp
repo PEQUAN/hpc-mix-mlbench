@@ -12,14 +12,14 @@
 const bool USE_FIXED_SEED = true;
 
 struct DataPoint {
-    __PR_1__* features; 
+    __PROMISE__* features; 
     int label;
     size_t numFeatures;
 
     DataPoint() : features(nullptr), label(0), numFeatures(0) {}
 
     DataPoint(size_t numFeatures_) : numFeatures(numFeatures_), label(0) {
-        features = new __PR_1__[numFeatures];
+        features = new __PROMISE__[numFeatures];
     }
 
     ~DataPoint() {
@@ -75,7 +75,7 @@ DataPoint* read_csv(const std::string& filename, size_t numFeatures, size_t& num
         getline(ss, value, ',');
 
         data[idx].numFeatures = numFeatures;
-        data[idx].features = new __PR_1__[numFeatures];
+        data[idx].features = new __PROMISE__[numFeatures];
         data[idx].label = 0;
 
         size_t featureIdx = 0;
@@ -101,10 +101,10 @@ private:
     int numPoints;
     int numFeatures;
     int k;
-    __PR_1__* data;          // numPoints * numFeatures
+    __PROMISE__* data;          // numPoints * numFeatures
     int* labels;           // numPoints
     int* groundTruth;      // numPoints
-    __PR_1__* centroids;     // k * numFeatures
+    __PROMISE__* centroids;     // k * numFeatures
     double runtime;
     unsigned int seed;
     bool useFixedSeed;
@@ -143,7 +143,7 @@ private:
 
         std::uniform_int_distribution<> dis(0, numPoints - 1);
         int firstCentroid = dis(gen);
-        __PR_1__* tempPoint = new __PR_1__[numFeatures];
+        __PROMISE__* tempPoint = new __PROMISE__[numFeatures];
         getPoint(firstCentroid, tempPoint);
         for (int j = 0; j < numFeatures; ++j) {
             centroids[j] = tempPoint[j];
@@ -154,7 +154,7 @@ private:
         for (int c = 1; c < k; ++c) {
             for (int i = 0; i < numPoints; ++i) {
                 distances[i] = std::numeric_limits<__PROMISE__>::max();
-                __PR_1__* point = new __PR_1__[numFeatures];
+                __PROMISE__* point = new __PROMISE__[numFeatures];
                 getPoint(i, point);
                 for (int j = 0; j < c; ++j) {
                     __PROMISE__* cent = centroids + j * numFeatures;
@@ -181,7 +181,7 @@ private:
                 }
             }
 
-            __PR_1__* newCentroid = new __PR_1__[numFeatures];
+            __PROMISE__* newCentroid = new __PROMISE__[numFeatures];
             getPoint(nextCentroid, newCentroid);
             for (int j = 0; j < numFeatures; ++j) {
                 centroids[c * numFeatures + j] = newCentroid[j];
@@ -258,8 +258,8 @@ public:
         bool changed = true;
         int iterations = 0;
 
-        __PR_1__* point = new __PR_1__[numFeatures];
-        __PR_2__* centroid = new __PR_2__[numFeatures];
+        __PROMISE__* point = new __PROMISE__[numFeatures];
+        __PROMISE__* centroid = new __PROMISE__[numFeatures];
 
         while (changed && iterations < maxIterations) {
             changed = false;
@@ -382,17 +382,21 @@ int main(int argc, char* argv[]) {
     std::cout << "\nEvaluation Metrics:" << std::endl;
     std::cout << "SSE: " << SSE << std::endl;
 
-    __PR_1__* centroids = kmeans.getCentroids();
+    __PROMISE__* centroids = kmeans.getCentroids();
+    __PROMISE__ check_centroids[NUM_FEATURES*K];
+
     for (int i = 0; i < K; ++i) {
         for (int j = 0; j < NUM_FEATURES; ++j) {
+            check_centroids[i * NUM_FEATURES + j] = centroids[i * NUM_FEATURES + j];
             std::cout << centroids[i * NUM_FEATURES + j] << " ";
             
+            PROMISE_CHECK_VAR(centroids[i * NUM_FEATURES + j]);
         }
         std::cout << std::endl;
     }
-
+    
     int check_elements = NUM_FEATURES*K;
-   
+    // PROMISE_CHECK_ARRAY(check_centroids, check_elements);
     delete[] dataPoints;
 
     return 0;
