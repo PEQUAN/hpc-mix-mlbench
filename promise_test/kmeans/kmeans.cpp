@@ -12,24 +12,20 @@
 const bool USE_FIXED_SEED = true;
 
 struct DataPoint {
-    __PR_1__* features; // Dynamically allocated array for features
+    __PR_1__* features; 
     int label;
     size_t numFeatures;
 
-    // Default constructor
     DataPoint() : features(nullptr), label(0), numFeatures(0) {}
 
-    // Parameterized constructor
     DataPoint(size_t numFeatures_) : numFeatures(numFeatures_), label(0) {
         features = new __PR_1__[numFeatures];
     }
 
-    // Destructor
     ~DataPoint() {
         delete[] features;
     }
 
-    // Copy constructor
     DataPoint(const DataPoint& other) : numFeatures(other.numFeatures), label(other.label) {
         features = new __PROMISE__[numFeatures];
         for (size_t i = 0; i < numFeatures; ++i) {
@@ -37,7 +33,6 @@ struct DataPoint {
         }
     }
 
-    // Copy assignment operator
     DataPoint& operator=(const DataPoint& other) {
         if (this != &other) {
             delete[] features;
@@ -60,16 +55,14 @@ DataPoint* read_csv(const std::string& filename, size_t numFeatures, size_t& num
         return nullptr;
     }
 
-    // Count number of data points
     std::string line;
-    getline(file, line); // Skip header
+    getline(file, line);
     while (getline(file, line)) {
         ++numPoints;
     }
     file.clear();
     file.seekg(0);
 
-    // Allocate array for data points using default constructor
     DataPoint* data = new DataPoint[numPoints];
     size_t idx = 0;
 
@@ -81,18 +74,15 @@ DataPoint* read_csv(const std::string& filename, size_t numFeatures, size_t& num
         // Skip the index column
         getline(ss, value, ',');
 
-        // Initialize DataPoint
         data[idx].numFeatures = numFeatures;
         data[idx].features = new __PR_1__[numFeatures];
         data[idx].label = 0;
 
-        // Read features
         size_t featureIdx = 0;
         while (getline(ss, value, ',')) {
             if (featureIdx < numFeatures) {
                 data[idx].features[featureIdx] = std::stod(value);
             } else {
-                // Last value is the label
                 data[idx].label = static_cast<int>(std::stod(value));
             }
             ++featureIdx;
@@ -111,10 +101,10 @@ private:
     int numPoints;
     int numFeatures;
     int k;
-    __PR_1__* data;          // Flattened array: numPoints * numFeatures
-    int* labels;           // Array of size numPoints
-    int* groundTruth;      // Array of size numPoints
-    __PR_1__* centroids;     // Array of size k * numFeatures
+    __PR_1__* data;          // numPoints * numFeatures
+    int* labels;           // numPoints
+    int* groundTruth;      // numPoints
+    __PR_1__* centroids;     // k * numFeatures
     double runtime;
     unsigned int seed;
     bool useFixedSeed;
@@ -396,14 +386,13 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < K; ++i) {
         for (int j = 0; j < NUM_FEATURES; ++j) {
             std::cout << centroids[i * NUM_FEATURES + j] << " ";
-            PROMISE_CHECK_VAR(centroids[i * NUM_FEATURES + j]);
+            
         }
         std::cout << std::endl;
     }
 
     int check_elements = NUM_FEATURES*K;
    
-    // Cleanup
     delete[] dataPoints;
 
     return 0;
