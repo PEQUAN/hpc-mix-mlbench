@@ -1,8 +1,0 @@
-compile:
-  - g++ jacobi.cc -o jacobi.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
-run: jacobi.out
-files: jacobi.cc
-nbDigits: 1
-verbosity: 1
-log: promise_log.txt
-output: results/

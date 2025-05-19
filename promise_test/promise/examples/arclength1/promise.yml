@@ -1,8 +1,0 @@
-compile:
-- g++ arclength.cc -O1 -frounding-math -m64 -o arclength.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
-run: arclength.out
-files: arclength.cc
-nbDigits: 8
-log: arclength.log
-verbosityLog: 2
-output: debug/

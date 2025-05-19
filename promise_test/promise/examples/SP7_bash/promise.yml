@@ -1,7 +1,0 @@
-compile:
-- bash run.sh
-
-run: R3.out
-files: R3.cc
-log: R3.log
-output: debug/

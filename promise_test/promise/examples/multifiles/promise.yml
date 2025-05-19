@@ -1,8 +1,0 @@
-compile:
--  bash run_promise.sh
-
-run: main_pm 1.21321 1.21492465
-files: main_pm.cc, callfunc_pm.h, callfunc_pm.cpp
-log: main.log
-output: debug/
-

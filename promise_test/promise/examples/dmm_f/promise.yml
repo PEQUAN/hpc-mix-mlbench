@@ -1,9 +1,0 @@
-compile:
-  - g++ matmul.cc -o matmul.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
-
-run: matmul.out
-files: matmul.cc
-nbDigits: 2
-verbosity: 4
-log: promise_log.txt
-output: results/

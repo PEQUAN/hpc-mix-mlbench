@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/pca.dir/pca.cpp.o -o pca  /lib/x86_64-linux-gnu/liblapacke64.so -lopenblas 

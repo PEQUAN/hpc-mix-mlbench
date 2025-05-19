@@ -6,14 +6,14 @@
 
 struct Matrix {
     int n;
-    double* data;
+    __PROMISE__* data;
 };
 
 
 Matrix create_matrix(int n) {
     Matrix A;
     A.n = n;
-    A.data = new double[n * n]();
+    A.data = new __PROMISE__[n * n]();
     return A;
 }
 
@@ -32,7 +32,7 @@ Matrix generate_random_matrix(int n, unsigned int seed = 42) {
 
     for (int i = 0; i < n; ++i) {
         for (int j = i; j < n; ++j) {
-            double val = dis(gen);
+            __PROMISE__ val = dis(gen);
             A.data[i * n + j] = val;
             A.data[j * n + i] = val;
         }
@@ -45,8 +45,8 @@ Matrix generate_random_matrix(int n, unsigned int seed = 42) {
 }
 
 
-double* generate_rhs(int n, unsigned int seed = 42) {
-    double* b = new double[n];
+__PROMISE__* generate_rhs(int n, unsigned int seed = 42) {
+    __PROMISE__* b = new __PROMISE__[n];
     std::mt19937 gen(seed + 1); 
     std::uniform_real_distribution<> dis(1.0, 10.0);
     for (int i = 0; i < n; ++i) {
@@ -56,8 +56,8 @@ double* generate_rhs(int n, unsigned int seed = 42) {
 }
 
 
-double dot(const double* a, const double* b, int n) {
-    double result = 0.0;
+__PROMISE__ dot(const __PROMISE__* a, const __PROMISE__* b, int n) {
+    __PROMISE__ result = 0.0;
     for (int i = 0; i < n; ++i) {
         result += a[i] * b[i];
     }
@@ -65,12 +65,12 @@ double dot(const double* a, const double* b, int n) {
 }
 
 
-double norm(const double* v, int n) {
-    return std::sqrt(dot(v, v, n));
+__PROMISE__ norm(const __PROMISE__* v, int n) {
+    return sqrt(dot(v, v, n));
 }
 
-double* matvec(const Matrix& A, const double* x) {
-    double* y = new double[A.n]();
+__PROMISE__* matvec(const Matrix& A, const __PROMISE__* x) {
+    __PROMISE__* y = new __PROMISE__[A.n]();
     for (int i = 0; i < A.n; ++i) {
         for (int j = 0; j < A.n; ++j) {
             y[i] += A.data[i * A.n + j] * x[j];
@@ -80,35 +80,35 @@ double* matvec(const Matrix& A, const double* x) {
 }
 
 struct GSResult {
-    double* x;
-    double residual;
+    __PROMISE__* x;
+    __PROMISE__ residual;
     int iterations;
     bool converged;
 };
 
 
 
-GSResult gauss_seidel(const Matrix& A, const double* b, int max_iter = 1000, double tol = 1e-6) {
+GSResult gauss_seidel(const Matrix& A, const __PROMISE__* b, int max_iter = 1000, __PROMISE__ tol = 1e-6) {
     int n = A.n;
-    double* x = new double[n]();
-    double* r = new double[n];
+    __PROMISE__* x = new __PROMISE__[n]();
+    __PROMISE__* r = new __PROMISE__[n];
     for (int i = 0; i < n; ++i) {
         r[i] = b[i];
     }
-    double initial_norm = norm(r, n);
-    double tol_abs = tol * initial_norm;
+    __PROMISE__ initial_norm = norm(r, n);
+    __PROMISE__ tol_abs = tol * initial_norm;
     int iter;
 
     for (iter = 0; iter < max_iter; ++iter) {
         for (int i = 0; i < n; ++i) {
-            double sigma = 0.0;
+            __PROMISE__ sigma = 0.0;
             for (int j = 0; j < i; ++j) {
                 sigma += A.data[i * n + j] * x[j];
             }
             for (int j = i + 1; j < n; ++j) {
                 sigma += A.data[i * n + j] * x[j];
             }
-            if (std::abs(A.data[i * n + i]) < 1e-15) {
+            if (abs(A.data[i * n + i]) < 1e-15) {
                 std::cerr << "Zero diagonal element at i=" << i << std::endl;
                 delete[] r;
                 return {x, norm(r, n), iter, false};
@@ -117,13 +117,13 @@ GSResult gauss_seidel(const Matrix& A, const double* b, int max_iter = 1000, dou
         }
 
 
-        double* Ax = matvec(A, x);
+        __PROMISE__* Ax = matvec(A, x);
         for (int i = 0; i < n; ++i) {
             r[i] = b[i] - Ax[i];
         }
         delete[] Ax;
 
-        double r_norm = norm(r, n);
+        __PROMISE__ r_norm = norm(r, n);
         if (r_norm < tol_abs) {
             std::cout << "Converged at iteration " << iter + 1 << std::endl;
             delete[] r;
@@ -137,24 +137,11 @@ GSResult gauss_seidel(const Matrix& A, const double* b, int max_iter = 1000, dou
 }
 
 
-void write_solution(const double* x, int n, const std::string& filename) {
-    std::ofstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Error opening output file: " << filename << std::endl;
-        return;
-    }
-    file << "x\n";
-    for (int i = 0; i < n; ++i) {
-        file << x[i] << "\n";
-    }
-    file.close();
-}
-
 int main() {
     try {
         int n = 1000; 
         Matrix A = generate_random_matrix(n);
-        double* b = generate_rhs(n);
+        __PROMISE__* b = generate_rhs(n);
 
         auto start = std::chrono::high_resolution_clock::now();
         GSResult result = gauss_seidel(A, b, n);
@@ -162,21 +149,26 @@ int main() {
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
         
-        double* Ax = matvec(A, result.x);
-        double* residual = new double[n];
+        __PROMISE__* Ax = matvec(A, result.x);
+        __PROMISE__* residual = new __PROMISE__[n];
         for (int i = 0; i < n; ++i) {
             residual[i] = b[i] - Ax[i];
         }
-        double residual_norm = norm(residual, n);
+        __PROMISE__ residual_norm = norm(residual, n);
 
         std::cout << "Matrix size: " << n << " x " << n << std::endl;
-        std::cout << "Time: " << duration.count() << " ms" << std::endl;
         std::cout << "Final residual norm: " << residual_norm << std::endl;
         std::cout << "Iterations: " << result.iterations << std::endl;
         std::cout << "Converged: " << (result.converged ? "yes" : "no") << std::endl;
+        double check_x[A.n];
+        // add for check
+        for (int i=0; i<A.n; i++){
+            check_x[i] = result.x[i];
+        }
 
-        write_solution(result.x, n, "../results/gauss_seidel/gauss_seidel_solution.csv");
 
+
+        PROMISE_CHECK_ARRAY(check_x, A.n);
         free_matrix(A);
         delete[] b;
         delete[] result.x;

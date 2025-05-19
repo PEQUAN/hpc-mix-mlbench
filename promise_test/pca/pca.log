@@ -1,0 +1,80 @@
+05/19 12:58:46: 🤘 cadnaPromise 🤘
+05/19 12:58:46: Using the compiler: g++
+05/19 12:58:46: We are working with 1 file and 36 different types
+05/19 12:58:46: The expectation is 1 digits.
+05/19 12:58:46: a) Get a reference result with cadna (double)
+05/19 12:58:48: pca.cpp: In function ‘double& matrix_at(Matrix&, int, int)’:
+pca.cpp:108:33: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  108 |     return A.data[i * A.cols + j];
+      |            ~~~~~~~~~~~~~~~~~~~~~^
+In file included from pca.cpp:1:
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+pca.cpp: In function ‘Matrix scale_matrix(const Matrix&)’:
+pca.cpp:218:34: error: operands to ‘?:’ have different types ‘double_st’ and ‘double’
+  218 |         means[j] = counts[j] > 0 ? means[j] / counts[j] : 0.0;
+      |                    ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+pca.cpp:218:34: note:   and each type can be converted to the other
+pca.cpp:232:33: error: operands to ‘?:’ have different types ‘double_st’ and ‘double’
+  232 |         stds[j] = counts[j] > 0 ? sqrt(stds[j] / counts[j]) : 1.0;
+      |                   ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+pca.cpp:232:33: note:   and each type can be converted to the other
+pca.cpp: In member function ‘void PCA::power_iteration(const Matrix&, double&, Matrix&, int)’:
+pca.cpp:335:42: error: ambiguous overload for ‘operator/=’ (operand types are ‘double’ and ‘double_st’)
+  335 |             matrix_at(eigenvector, i, 0) /= norm;
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+pca.cpp:335:42: note: candidate: ‘operator/=(double&, double)’ (built-in)
+pca.cpp:335:42: note: candidate: ‘operator/=(double&, float)’ (built-in)
+pca.cpp:335:42: note: candidate: ‘operator/=(double&, long long unsigned int)’ (built-in)
+pca.cpp:335:42: note: candidate: ‘operator/=(double&, long long int)’ (built-in)
+pca.cpp:335:42: note: candidate: ‘operator/=(double&, long unsigned int)’ (built-in)
+pca.cpp:335:42: note: candidate: ‘operator/=(double&, long int)’ (built-in)
+pca.cpp:335:42: note: candidate: ‘operator/=(double&, unsigned int)’ (built-in)
+pca.cpp:335:42: note: candidate: ‘operator/=(double&, int)’ (built-in)
+pca.cpp: In member function ‘void PCA::computeEigenvectors(Matrix&, int, int)’:
+pca.cpp:418:32: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  418 |             power_iteration(A, eigenvalue, eigenvector);
+      |                                ^~~~~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+pca.cpp:302:51: note:   initializing argument 2 of ‘void PCA::power_iteration(const Matrix&, double&, Matrix&, int)’
+  302 |     void power_iteration(const Matrix& A, double& eigenvalue, Matrix& eigenvector, int max_iter = 200) {
+      |                                           ~~~~~~~~^~~~~~~~~~
+pca.cpp:442:40: error: ambiguous overload for ‘operator-=’ (operand types are ‘double’ and ‘double_st’)
+  442 |                     matrix_at(A, i, j) -= eigenvalue * matrix_at(vvt, i, j);
+      |                     ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+pca.cpp:442:40: note: candidate: ‘operator-=(double&, double)’ (built-in)
+pca.cpp:442:40: note: candidate: ‘operator-=(double&, float)’ (built-in)
+pca.cpp:442:40: note: candidate: ‘operator-=(double&, long long unsigned int)’ (built-in)
+pca.cpp:442:40: note: candidate: ‘operator-=(double&, long long int)’ (built-in)
+pca.cpp:442:40: note: candidate: ‘operator-=(double&, long unsigned int)’ (built-in)
+pca.cpp:442:40: note: candidate: ‘operator-=(double&, long int)’ (built-in)
+pca.cpp:442:40: note: candidate: ‘operator-=(double&, unsigned int)’ (built-in)
+pca.cpp:442:40: note: candidate: ‘operator-=(double&, int)’ (built-in)
+pca.cpp: In member function ‘void PCA::centerData(Matrix&)’:
+pca.cpp:555:39: error: ambiguous overload for ‘operator-=’ (operand types are ‘double’ and ‘double_st’)
+  555 |                 matrix_at(data, i, j) -= mu;
+      |                 ~~~~~~~~~~~~~~~~~~~~~~^~~~~
+pca.cpp:555:39: note: candidate: ‘operator-=(double&, double)’ (built-in)
+pca.cpp:555:39: note: candidate: ‘operator-=(double&, float)’ (built-in)
+pca.cpp:555:39: note: candidate: ‘operator-=(double&, long long unsigned int)’ (built-in)
+pca.cpp:555:39: note: candidate: ‘operator-=(double&, long long int)’ (built-in)
+pca.cpp:555:39: note: candidate: ‘operator-=(double&, long unsigned int)’ (built-in)
+pca.cpp:555:39: note: candidate: ‘operator-=(double&, long int)’ (built-in)
+pca.cpp:555:39: note: candidate: ‘operator-=(double&, unsigned int)’ (built-in)
+pca.cpp:555:39: note: candidate: ‘operator-=(double&, int)’ (built-in)
+pca.cpp: In function ‘int main(int, char**)’:
+pca.cpp:628:5: error: expected ‘;’ before ‘double_st’
+  628 |     double_st rmse, frobenius;
+      |     ^~~~~~~~~
+pca.cpp:629:53: error: ‘rmse’ was not declared in this scope
+  629 |     computeReconstructionError(data, reconstructed, rmse, frobenius);
+      |                                                     ^~~~
+pca.cpp:629:59: error: ‘frobenius’ was not declared in this scope
+  629 |     computeReconstructionError(data, reconstructed, rmse, frobenius);
+      |                                                           ^~~~~~~~~
+
+05/19 12:58:48: Compilation failed
+Is Cadna installed? Did you link your cade with Cadna with `-lcadnac`, `-L$CADNA_PATH/lib` and `-I$CADNA_PATH/include` ?

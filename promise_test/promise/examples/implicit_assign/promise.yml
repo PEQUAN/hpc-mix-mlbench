@@ -1,7 +1,0 @@
-compile:
-- g++ test.cpp -O3 -frounding-math -m64 -o test.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
-
-run: test.out
-files: test.cpp
-log: test.log
-output: debug/

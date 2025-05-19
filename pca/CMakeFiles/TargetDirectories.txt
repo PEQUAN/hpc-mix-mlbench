@@ -1,3 +1,0 @@
-/home/xinye/hpc-mix-mlbench/pca/CMakeFiles/pca.dir
-/home/xinye/hpc-mix-mlbench/pca/CMakeFiles/edit_cache.dir
-/home/xinye/hpc-mix-mlbench/pca/CMakeFiles/rebuild_cache.dir

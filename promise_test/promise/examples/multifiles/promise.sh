@@ -1,1 +1,0 @@
- promise --precs=wd --nbDigits=5

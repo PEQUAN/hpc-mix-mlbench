@@ -1,9 +1,0 @@
-compile:
-- g++ rectangleMethod.cc -O3 -frounding-math -m64 -o rectangleMethod.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
-
-run: rectangleMethod.out
-files: rectangleMethod.cc
-nbDigits: 10
-log: rectangleMethod.log
-verbosityLog: 2
-output: debug/

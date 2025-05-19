@@ -1,6 +1,0 @@
-compile:
-- g++ vector.cpp -frounding-math -m64 -o a.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
-run: a.out
-files: vector.cpp
-log: vector.log
-output: debug/
