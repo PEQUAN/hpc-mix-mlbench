@@ -384,7 +384,7 @@ private:
             Q_acc.data[i * Q_acc.cols + i] = 1.0;
         }
 
-        int max_iter = 100;
+        int max_iter = 1;
         for (int iter = 0; iter < max_iter; ++iter) {
             Matrix Q, R;
             qr_decomposition(A, Q, R);
