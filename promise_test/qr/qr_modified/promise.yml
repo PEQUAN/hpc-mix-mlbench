@@ -1,0 +1,7 @@
+compile:
+- g++ qr_modified.cpp -frounding-math -m64 -o qr_modified.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: qr_modified.out
+files: qr_modified.cpp
+log: qr_modified.log
+output: debug/
