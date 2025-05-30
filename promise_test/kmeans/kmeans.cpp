@@ -3,13 +3,10 @@
 #include <sstream>
 #include <string>
 #include <cmath>
-#include <random>
 #include <algorithm>
 #include <chrono>
 #include <numeric>
 #include <unordered_map>
-
-const bool USE_FIXED_SEED = true;
 
 struct DataPoint {
     __PROMISE__* features; 
@@ -66,12 +63,11 @@ DataPoint* read_csv(const std::string& filename, size_t numFeatures, size_t& num
     DataPoint* data = new DataPoint[numPoints];
     size_t idx = 0;
 
-    getline(file, line); // Skip header
+    getline(file, line); 
     while (getline(file, line)) {
         std::stringstream ss(line);
         std::string value;
 
-        // Skip the index column
         getline(ss, value, ',');
 
         data[idx].numFeatures = numFeatures;
@@ -105,9 +101,7 @@ private:
     int* labels;           // numPoints
     int* groundTruth;      // numPoints
     __PROMISE__* centroids;     // k * numFeatures
-    double runtime;
-    unsigned int seed;
-    bool useFixedSeed;
+    __PROMISE__ runtime;
 
     void getPoint(int idx, __PROMISE__* point) const {
         if (idx < 0 || idx >= numPoints) {
@@ -131,70 +125,25 @@ private:
     }
 
     void initializeCentroids() {
-        std::mt19937 gen;
-        if (useFixedSeed) {
-            gen = std::mt19937(seed);
-            std::cout << "Using fixed seed: " << seed << std::endl;
-        } else {
-            std::random_device rd;
-            gen = std::mt19937(rd());
-            std::cout << "Using random_device for seed" << std::endl;
-        }
-
-        std::uniform_int_distribution<> dis(0, numPoints - 1);
-        int firstCentroid = dis(gen);
-        __PROMISE__* tempPoint = new __PROMISE__[numFeatures];
-        getPoint(firstCentroid, tempPoint);
-        for (int j = 0; j < numFeatures; ++j) {
-            centroids[j] = tempPoint[j];
-        }
-        delete[] tempPoint;
-
-        __PROMISE__* distances = new __PROMISE__[numPoints];
-        for (int c = 1; c < k; ++c) {
-            for (int i = 0; i < numPoints; ++i) {
-                distances[i] = std::numeric_limits<__PROMISE__>::max();
-                __PROMISE__* point = new __PROMISE__[numFeatures];
-                getPoint(i, point);
-                for (int j = 0; j < c; ++j) {
-                    __PROMISE__* cent = centroids + j * numFeatures;
-                    __PROMISE__ dist = euclideanDistance(point, cent);
-                    distances[i] = min(distances[i], dist * dist);
-                }
-                delete[] point;
+        // Deterministically select the first k points as initial centroids
+        for (int c = 0; c < k; ++c) {
+            if (c >= numPoints) {
+                std::cerr << "Not enough points to select " << k << " centroids" << std::endl;
+                return;
             }
-
-            // Discrete distribution simulation
-            __PROMISE__ sum = 0.0;
-            for (int i = 0; i < numPoints; ++i) {
-                sum += distances[i];
-            }
-            std::uniform_real_distribution<> dist(0, sum);
-            __PROMISE__ r = dist(gen);
-            __PROMISE__ cumulative = 0.0;
-            int nextCentroid = 0;
-            for (int i = 0; i < numPoints; ++i) {
-                cumulative += distances[i];
-                if (r <= cumulative) {
-                    nextCentroid = i;
-                    break;
-                }
-            }
-
-            __PROMISE__* newCentroid = new __PROMISE__[numFeatures];
-            getPoint(nextCentroid, newCentroid);
+            __PROMISE__* tempPoint = new __PROMISE__[numFeatures];
+            getPoint(c, tempPoint);
             for (int j = 0; j < numFeatures; ++j) {
-                centroids[c * numFeatures + j] = newCentroid[j];
+                centroids[c * numFeatures + j] = tempPoint[j];
             }
-            delete[] newCentroid;
+            delete[] tempPoint;
         }
-        delete[] distances;
+        std::cout << "Initialized " << k << " centroids deterministically using first " << k << " points" << std::endl;
     }
 
 public:
-    KMeans(int k_, int numFeatures_, unsigned int seed_ = 0, bool useFixedSeed_ = true)
+    KMeans(int k_, int numFeatures_)
         : k(k_), numFeatures(numFeatures_), numPoints(0), runtime(0.0),
-          seed(seed_), useFixedSeed(useFixedSeed_),
           data(nullptr), labels(nullptr), groundTruth(nullptr), centroids(nullptr) {}
 
     ~KMeans() {
@@ -254,6 +203,7 @@ public:
             return;
         }
 
+        auto start = std::chrono::high_resolution_clock::now();
         initializeCentroids();
         bool changed = true;
         int iterations = 0;
@@ -266,7 +216,7 @@ public:
 
             for (int i = 0; i < numPoints; ++i) {
                 getPoint(i, point);
-                __PROMISE__ minDist = 999999.0;
+                __PROMISE__ minDist = 9999;
                 int newLabel = 0;
 
                 for (int c = 0; c < k; ++c) {
@@ -314,15 +264,17 @@ public:
         delete[] point;
         delete[] centroid;
 
+        auto end = std::chrono::high_resolution_clock::now();
+        runtime = std::chrono::duration<__PROMISE__>(end - start).count();
 
         std::cout << "Converged after " << iterations << " iterations" << std::endl;
         std::cout << "Runtime: " << runtime << " seconds" << std::endl;
     }
 
     __PROMISE__ calculateSSE() const {
-        double sse = 0.0;
-        double* point = new double[numFeatures];
-        double* centroid = new double[numFeatures];
+        __PROMISE__ sse = 0.0;
+        __PROMISE__* point = new __PROMISE__[numFeatures];
+        __PROMISE__* centroid = new __PROMISE__[numFeatures];
 
         for (int i = 0; i < numPoints; ++i) {
             getPoint(i, point);
@@ -330,7 +282,7 @@ public:
             for (int j = 0; j < numFeatures; ++j) {
                 centroid[j] = centroids[cluster * numFeatures + j];
             }
-            double dist = euclideanDistance(point, centroid);
+            __PROMISE__ dist = euclideanDistance(point, centroid);
             sse += dist * dist;
         }
 
@@ -339,6 +291,204 @@ public:
         return sse;
     }
 
+    __PROMISE__ calculateAMI() const {
+        if (!groundTruth) {
+            std::cerr << "No ground truth labels available for AMI calculation" << std::endl;
+            return 0.0;
+        }
+
+        int maxLabel = 0;
+        for (int i = 0; i < numPoints; ++i) {
+            maxLabel = max(maxLabel, groundTruth[i]);
+        }
+        maxLabel += 1;
+        int maxCluster = k;
+
+        int** contingency = new int*[maxCluster];
+        for (int i = 0; i < maxCluster; ++i) {
+            contingency[i] = new int[maxLabel]();
+        }
+
+        for (int i = 0; i < numPoints; ++i) {
+            contingency[labels[i]][groundTruth[i]]++;
+        }
+
+        int* a = new int[maxCluster]();
+        int* b = new int[maxLabel]();
+        for (int i = 0; i < maxCluster; ++i) {
+            for (int j = 0; j < maxLabel; ++j) {
+                a[i] += contingency[i][j];
+                b[j] += contingency[i][j];
+            }
+        }
+
+        __PROMISE__ mi = 0.0;
+        for (int i = 0; i < maxCluster; ++i) {
+            for (int j = 0; j < maxLabel; ++j) {
+                if (contingency[i][j] > 0) {
+                    __PROMISE__ p_ij = contingency[i][j] / static_cast<__PROMISE__>(numPoints);
+                    __PROMISE__ p_i = a[i] / static_cast<__PROMISE__>(numPoints);
+                    __PROMISE__ p_j = b[j] / static_cast<__PROMISE__>(numPoints);
+                    mi += p_ij * log(p_ij / (p_i * p_j));
+                }
+            }
+        }
+
+        __PROMISE__ ha = 0.0, hb = 0.0;
+        for (int i = 0; i < maxCluster; ++i) {
+            if (a[i] > 0) {
+                __PROMISE__ p_i = a[i] / static_cast<__PROMISE__>(numPoints);
+                ha -= p_i * log(p_i);
+            }
+        }
+        for (int j = 0; j < maxLabel; ++j) {
+            if (b[j] > 0) {
+                __PROMISE__ p_j = b[j] / static_cast<__PROMISE__>(numPoints);
+                hb -= p_j * log(p_j);
+            }
+        }
+
+        __PROMISE__ emi = 0.0;
+        for (int i = 0; i < maxCluster; ++i) {
+            for (int j = 0; j < maxLabel; ++j) {
+                if (a[i] > 0 && b[j] > 0) {
+                    __PROMISE__ nij = (static_cast<__PROMISE__>(a[i]) * b[j]) / numPoints;
+                    if (nij > 0) {
+                        emi += (nij / numPoints) * log(numPoints * nij / (a[i] * b[j]));
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < maxCluster; ++i) {
+            delete[] contingency[i];
+        }
+        delete[] contingency;
+        delete[] a;
+        delete[] b;
+
+        if (ha + hb == 0) return 0.0;
+        __PROMISE__ denominator = (ha + hb) / 2.0 - emi;
+        if (denominator == 0) return 0.0;
+        __PROMISE__ ami = (mi - emi) / denominator;
+        __PROMISE__ temp1 = -1;
+        __PROMISE__ temp2 = 1;
+        return max(temp1, min(temp2, ami));
+    }
+
+    __PROMISE__ calculateARI() const {
+        if (!groundTruth) {
+            std::cerr << "No ground truth labels available for ARI calculation" << std::endl;
+            return 0.0;
+        }
+
+        int maxLabel = 0;
+        for (int i = 0; i < numPoints; ++i) {
+            maxLabel = max(maxLabel, groundTruth[i]);
+        }
+        maxLabel += 1;
+        int maxCluster = k;
+
+        int** contingency = new int*[maxCluster];
+        for (int i = 0; i < maxCluster; ++i) {
+            contingency[i] = new int[maxLabel]();
+        }
+
+        for (int i = 0; i < numPoints; ++i) {
+            contingency[labels[i]][groundTruth[i]]++;
+        }
+
+        int* a = new int[maxCluster]();
+        int* b = new int[maxLabel]();
+        for (int i = 0; i < maxCluster; ++i) {
+            for (int j = 0; j < maxLabel; ++j) {
+                a[i] += contingency[i][j];
+                b[j] += contingency[i][j];
+            }
+        }
+
+        __PROMISE__ sum_nij = 0.0, sum_a = 0.0, sum_b = 0.0;
+        for (int i = 0; i < maxCluster; ++i) {
+            for (int j = 0; j < maxLabel; ++j) {
+                sum_nij += (static_cast<__PROMISE__>(contingency[i][j]) * (contingency[i][j] - 1)) / 2.0;
+            }
+            sum_a += (static_cast<__PROMISE__>(a[i]) * (a[i] - 1)) / 2.0;
+        }
+        for (int j = 0; j < maxLabel; ++j) {
+            sum_b += (static_cast<__PROMISE__>(b[j]) * (b[j] - 1)) / 2.0;
+        }
+
+        __PROMISE__ n = numPoints;
+        __PROMISE__ expected = (sum_a * sum_b) / (n * (n - 1) / 2.0);
+        __PROMISE__ max_index = (sum_a + sum_b) / 2.0;
+        __PROMISE__ index = sum_nij;
+
+        for (int i = 0; i < maxCluster; ++i) {
+            delete[] contingency[i];
+        }
+        delete[] contingency;
+        delete[] a;
+        delete[] b;
+
+        if (max_index == expected) return 0.0;
+        return (index - expected) / (max_index - expected);
+    }
+
+    bool saveLabelsToCSV(const std::string& filename) const {
+        std::ofstream file(filename);
+        if (!file.is_open()) {
+            std::cerr << "Error opening output labels file: " << filename << std::endl;
+            return false;
+        }
+
+        file << "point_index,cluster_label\n";
+        for (int i = 0; i < numPoints; ++i) {
+            file << i << "," << labels[i] << "\n";
+        }
+
+        file.close();
+        std::cout << "Output labels saved to: " << filename << std::endl;
+        return true;
+    }
+
+    bool saveRuntimeToCSV(const std::string& filename) const {
+        std::ofstream file(filename);
+        if (!file.is_open()) {
+            std::cerr << "Error opening runtime file: " << filename << std::endl;
+            return false;
+        }
+
+        file << "runtime_seconds\n" << runtime << "\n";
+        file.close();
+        std::cout << "Runtime saved to: " << filename << std::endl;
+        return true;
+    }
+
+    bool saveCentroidsToCSV(const std::string& filename) const {
+        std::ofstream file(filename);
+        if (!file.is_open()) {
+            std::cerr << "Error opening centroids file: " << filename << std::endl;
+            return false;
+        }
+
+        file << "centroid_index";
+        for (int j = 0; j < numFeatures; ++j) {
+            file << ",feature_" << j;
+        }
+        file << "\n";
+
+        for (int c = 0; c < k; ++c) {
+            file << c;
+            for (int j = 0; j < numFeatures; ++j) {
+                file << "," << centroids[c * numFeatures + j];
+            }
+            file << "\n";
+        }
+
+        file.close();
+        std::cout << "Centroids saved to: " << filename << std::endl;
+        return true;
+    }
 
     const int* getLabels() const { return labels; }
     __PROMISE__* getCentroids() const { return centroids; }
@@ -348,20 +498,15 @@ public:
 int main(int argc, char* argv[]) {
     size_t K = 2;
     size_t NUM_FEATURES = 2;
-    size_t SEED = 0;
 
     if (argc == 2) {
         K = atoi(argv[1]);
-    } else if (argc == 3) {
+    } else if (argc >= 3) {
         K = atoi(argv[1]);
         NUM_FEATURES = atoi(argv[2]);
-    } else if (argc > 3) {
-        K = atoi(argv[1]);
-        NUM_FEATURES = atoi(argv[2]);
-        SEED = atoi(argv[3]);
     }
 
-    KMeans kmeans(K, NUM_FEATURES, SEED, USE_FIXED_SEED);
+    KMeans kmeans(K, NUM_FEATURES);
 
     size_t numPoints;
     DataPoint* dataPoints = read_csv("blobs_20d_10_include_y.csv", NUM_FEATURES, numPoints);
@@ -378,25 +523,24 @@ int main(int argc, char* argv[]) {
 
     kmeans.fit();
 
-    double SSE = kmeans.calculateSSE();
-    std::cout << "\nEvaluation Metrics:" << std::endl;
-    std::cout << "SSE: " << SSE << std::endl;
+    __PROMISE__ SSE = kmeans.calculateSSE();
+    __PROMISE__ ami = kmeans.calculateAMI();
+    __PROMISE__ ari = kmeans.calculateARI();
+    // std::cout << "\nEvaluation Metrics:" << std::endl;
+    //std::cout << "SSE: " << SSE << std::endl;
+    //std::cout << "AMI: " <<  << std::endl;
+    //std::cout << "ARI: " <<  << std::endl;
 
+    
     __PROMISE__* centroids = kmeans.getCentroids();
-    __PROMISE__ check_centroids[NUM_FEATURES*K];
-
     for (int i = 0; i < K; ++i) {
         for (int j = 0; j < NUM_FEATURES; ++j) {
-            check_centroids[i * NUM_FEATURES + j] = centroids[i * NUM_FEATURES + j];
             std::cout << centroids[i * NUM_FEATURES + j] << " ";
-            
-            PROMISE_CHECK_VAR(centroids[i * NUM_FEATURES + j]);
         }
         std::cout << std::endl;
     }
-    
-    int check_elements = NUM_FEATURES*K;
-    // PROMISE_CHECK_ARRAY(check_centroids, check_elements);
+
+    PROMISE_CHECK_ARRAY(centroids,  NUM_FEATURES*K);
     delete[] dataPoints;
 
     return 0;

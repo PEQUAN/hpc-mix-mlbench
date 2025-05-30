@@ -3,13 +3,10 @@
 #include <sstream>
 #include <string>
 #include <cmath>
-#include <random>
 #include <algorithm>
 #include <chrono>
 #include <numeric>
 #include <unordered_map>
-
-const bool USE_FIXED_SEED = true;
 
 struct DataPoint {
     double* features; 
@@ -105,8 +102,6 @@ private:
     int* groundTruth;      // numPoints
     double* centroids;     // k * numFeatures
     double runtime;
-    unsigned int seed;
-    bool useFixedSeed;
 
     void getPoint(int idx, double* point) const {
         if (idx < 0 || idx >= numPoints) {
@@ -130,70 +125,25 @@ private:
     }
 
     void initializeCentroids() {
-        std::mt19937 gen;
-        if (useFixedSeed) {
-            gen = std::mt19937(seed);
-            std::cout << "Using fixed seed: " << seed << std::endl;
-        } else {
-            std::random_device rd;
-            gen = std::mt19937(rd());
-            std::cout << "Using random_device for seed" << std::endl;
-        }
-
-        std::uniform_int_distribution<> dis(0, numPoints - 1);
-        int firstCentroid = dis(gen);
-        double* tempPoint = new double[numFeatures];
-        getPoint(firstCentroid, tempPoint);
-        for (int j = 0; j < numFeatures; ++j) {
-            centroids[j] = tempPoint[j];
-        }
-        delete[] tempPoint;
-
-        double* distances = new double[numPoints];
-        for (int c = 1; c < k; ++c) {
-            for (int i = 0; i < numPoints; ++i) {
-                distances[i] = std::numeric_limits<double>::max();
-                double* point = new double[numFeatures];
-                getPoint(i, point);
-                for (int j = 0; j < c; ++j) {
-                    double* cent = centroids + j * numFeatures;
-                    double dist = euclideanDistance(point, cent);
-                    distances[i] = std::min(distances[i], dist * dist);
-                }
-                delete[] point;
+        // Deterministically select the first k points as initial centroids
+        for (int c = 0; c < k; ++c) {
+            if (c >= numPoints) {
+                std::cerr << "Not enough points to select " << k << " centroids" << std::endl;
+                return;
             }
-
-            // Discrete distribution simulation
-            double sum = 0.0;
-            for (int i = 0; i < numPoints; ++i) {
-                sum += distances[i];
-            }
-            std::uniform_real_distribution<> dist(0, sum);
-            double r = dist(gen);
-            double cumulative = 0.0;
-            int nextCentroid = 0;
-            for (int i = 0; i < numPoints; ++i) {
-                cumulative += distances[i];
-                if (r <= cumulative) {
-                    nextCentroid = i;
-                    break;
-                }
-            }
-
-            double* newCentroid = new double[numFeatures];
-            getPoint(nextCentroid, newCentroid);
+            double* tempPoint = new double[numFeatures];
+            getPoint(c, tempPoint);
             for (int j = 0; j < numFeatures; ++j) {
-                centroids[c * numFeatures + j] = newCentroid[j];
+                centroids[c * numFeatures + j] = tempPoint[j];
             }
-            delete[] newCentroid;
+            delete[] tempPoint;
         }
-        delete[] distances;
+        std::cout << "Initialized " << k << " centroids deterministically using first " << k << " points" << std::endl;
     }
 
 public:
-    KMeans(int k_, int numFeatures_, unsigned int seed_ = 0, bool useFixedSeed_ = true)
+    KMeans(int k_, int numFeatures_)
         : k(k_), numFeatures(numFeatures_), numPoints(0), runtime(0.0),
-          seed(seed_), useFixedSeed(useFixedSeed_),
           data(nullptr), labels(nullptr), groundTruth(nullptr), centroids(nullptr) {}
 
     ~KMeans() {
@@ -546,20 +496,15 @@ public:
 int main(int argc, char* argv[]) {
     size_t K = 2;
     size_t NUM_FEATURES = 2;
-    size_t SEED = 42;
 
     if (argc == 2) {
         K = atoi(argv[1]);
-    } else if (argc == 3) {
+    } else if (argc >= 3) {
         K = atoi(argv[1]);
         NUM_FEATURES = atoi(argv[2]);
-    } else if (argc > 3) {
-        K = atoi(argv[1]);
-        NUM_FEATURES = atoi(argv[2]);
-        SEED = atoi(argv[3]);
     }
 
-    KMeans kmeans(K, NUM_FEATURES, SEED, USE_FIXED_SEED);
+    KMeans kmeans(K, NUM_FEATURES);
 
     size_t numPoints;
     DataPoint* dataPoints = read_csv("../data/clustering/blobs_20d_10_include_y.csv", NUM_FEATURES, numPoints);
@@ -585,7 +530,7 @@ int main(int argc, char* argv[]) {
     std::cout << "AMI: " << kmeans.calculateAMI() << std::endl;
     std::cout << "ARI: " << kmeans.calculateARI() << std::endl;
 
-    double* centroids = kmeans.getCentroids(); //const double* centroids = kmeans.getCentroids();
+    double* centroids = kmeans.getCentroids();
     for (int i = 0; i < K; ++i) {
         for (int j = 0; j < NUM_FEATURES; ++j) {
             std::cout << centroids[i * NUM_FEATURES + j] << " ";

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <vector>
 #include <cmath>
 #include <chrono>
 #include <unordered_set>
@@ -9,31 +8,40 @@
 #include <algorithm>
 
 struct DataPoint {
-    std::vector<double> features;
-    int true_label;  // Ground truth
-    int cluster;     // Predicted cluster
+    double* features;
+    int true_label;
+    int cluster;
 };
 
 class DBSCAN {
 private:
     double eps;
     int min_pts;
-    std::vector<DataPoint> data;
+    DataPoint* data;
+    size_t data_size;
+    size_t n_features;
 
-    double distance(const std::vector<double>& p1, const std::vector<double>& p2) {
+    double distance(const double* p1, const double* p2) {
         double sum = 0.0;
-        for (size_t i = 0; i < p1.size(); ++i) {
+        for (size_t i = 0; i < n_features; ++i) {
             double diff = p1[i] - p2[i];
             sum += diff * diff;
         }
         return sqrt(sum);
     }
 
-    std::vector<int> find_neighbors(int point_idx) {
-        std::vector<int> neighbors;
-        for (size_t i = 0; i < data.size(); ++i) {
+    int* find_neighbors(int point_idx, int& neighbor_count) {
+        neighbor_count = 0;
+        for (size_t i = 0; i < data_size; ++i) {
             if (i != point_idx && distance(data[point_idx].features, data[i].features) <= eps) {
-                neighbors.push_back(i);
+                neighbor_count++;
+            }
+        }
+        int* neighbors = new int[neighbor_count];
+        int idx = 0;
+        for (size_t i = 0; i < data_size; ++i) {
+            if (i != point_idx && distance(data[point_idx].features, data[i].features) <= eps) {
+                neighbors[idx++] = i;
             }
         }
         return neighbors;
@@ -41,11 +49,16 @@ private:
 
     void expand_cluster(int point_idx, int cluster_label, std::unordered_set<int>& visited) {
         data[point_idx].cluster = cluster_label;
-        std::vector<int> neighbors = find_neighbors(point_idx);
-        
-        if (neighbors.size() < min_pts) return;
-        
-        for (int neighbor_idx : neighbors) {
+        int neighbor_count;
+        int* neighbors = find_neighbors(point_idx, neighbor_count);
+
+        if (neighbor_count < min_pts) {
+            delete[] neighbors;
+            return;
+        }
+
+        for (int i = 0; i < neighbor_count; ++i) {
+            int neighbor_idx = neighbors[i];
             if (visited.find(neighbor_idx) == visited.end()) {
                 visited.insert(neighbor_idx);
                 if (data[neighbor_idx].cluster == -1) {
@@ -53,53 +66,63 @@ private:
                 }
             }
         }
+        delete[] neighbors;
     }
 
 public:
-    DBSCAN(double epsilon = 0.01, int min_points = 5) : eps(epsilon), min_pts(min_points) {}
-    
-    void fit(const std::vector<DataPoint>& input_data) {
-        data = input_data;
-        for (auto& point : data) {
-            point.cluster = -1;
+    DBSCAN(double epsilon = 0.01, int min_points = 5) : eps(epsilon), min_pts(min_points), data(nullptr), data_size(0), n_features(0) {}
+
+    ~DBSCAN() {
+        for (size_t i = 0; i < data_size; ++i) {
+            delete[] data[i].features;
         }
-        
+        delete[] data;
+    }
+
+    void fit(DataPoint* input_data, size_t size, size_t features) {
+        data = input_data;
+        data_size = size;
+        n_features = features;
+        for (size_t i = 0; i < data_size; ++i) {
+            data[i].cluster = -1;
+        }
+
         int cluster_label = 0;
         std::unordered_set<int> visited;
-        
-        for (size_t i = 0; i < data.size(); ++i) {
+
+        for (size_t i = 0; i < data_size; ++i) {
             if (visited.find(i) != visited.end()) continue;
-            
+
             visited.insert(i);
-            std::vector<int> neighbors = find_neighbors(i);
-            
-            if (neighbors.size() >= min_pts) {
+            int neighbor_count;
+            int* neighbors = find_neighbors(i, neighbor_count);
+
+            if (neighbor_count >= min_pts) {
                 expand_cluster(i, cluster_label, visited);
                 cluster_label++;
             }
+            delete[] neighbors;
         }
     }
-    
-    std::vector<int> get_labels() const {
-        std::vector<int> labels;
-        for (const auto& point : data) {
-            labels.push_back(point.cluster);
+
+    int* get_labels(size_t& label_count) const {
+        label_count = data_size;
+        int* labels = new int[label_count];
+        for (size_t i = 0; i < data_size; ++i) {
+            labels[i] = data[i].cluster;
         }
         return labels;
     }
 };
 
-double adjusted_mutual_information(const std::vector<int>& true_labels, 
-                                 const std::vector<int>& pred_labels) {
-    int n = true_labels.size();
+double adjusted_mutual_information(const int* true_labels, const int* pred_labels, size_t n) {
     if (n == 0) return 0.0;
 
     std::unordered_map<int, std::unordered_map<int, int>> contingency;
-    
-    for (int i = 0; i < n; ++i) {
+    for (size_t i = 0; i < n; ++i) {
         contingency[true_labels[i]][pred_labels[i]]++;
     }
-    
+
     std::unordered_map<int, int> a_sums, b_sums;
     for (const auto& row : contingency) {
         for (const auto& cell : row.second) {
@@ -107,7 +130,7 @@ double adjusted_mutual_information(const std::vector<int>& true_labels,
             b_sums[cell.first] += cell.second;
         }
     }
-    
+
     double mi = 0.0;
     double log_n = log(n);
     for (const auto& row : contingency) {
@@ -117,12 +140,12 @@ double adjusted_mutual_information(const std::vector<int>& true_labels,
             double ai = a_sums[row.first];
             double bj = b_sums[cell.first];
             double denom = ai * bj;
-            if (denom > 0) {  
-                mi += nij * log(nij * n / denom + 1e-10); 
+            if (denom > 0) {
+                mi += nij * log(nij * n / denom + 1e-10);
             }
         }
     }
-    mi = (mi > 0 ? mi / (n * log(2.0)) : 0);  
+    mi = (mi > 0 ? mi / (n * log(2.0)) : 0);
 
     double h_true = 0.0;
     for (const auto& a : a_sums) {
@@ -131,7 +154,6 @@ double adjusted_mutual_information(const std::vector<int>& true_labels,
     }
     h_true /= log(2.0);
 
-    // Entropy of predicted labels (H(B))
     double h_pred = 0.0;
     for (const auto& b : b_sums) {
         double p = b.second / (double)n;
@@ -139,24 +161,19 @@ double adjusted_mutual_information(const std::vector<int>& true_labels,
     }
     h_pred /= log(2.0);
 
-    // Expected MI (simplified approximation)
-    double emi = 0.0;  // Could compute more precisely, but often small
+    double emi = 0.0;
     double max_mi = (h_true + h_pred) / 2.0;
-
     double denom = max_mi - emi + 1e-10;
     if (denom <= 0) return 0.0;
     return (mi - emi) / denom;
 }
 
-double adjusted_rand_index(const std::vector<int>& true_labels, 
-                         const std::vector<int>& pred_labels) {
-    int n = true_labels.size();
+double adjusted_rand_index(const int* true_labels, const int* pred_labels, size_t n) {
     std::unordered_map<int, std::unordered_map<int, int>> contingency;
-    
-    for (int i = 0; i < n; ++i) {
+    for (size_t i = 0; i < n; ++i) {
         contingency[true_labels[i]][pred_labels[i]]++;
     }
-    
+
     double sum_nij2 = 0.0;
     std::unordered_map<int, double> a_sums, b_sums;
     for (const auto& row : contingency) {
@@ -166,97 +183,124 @@ double adjusted_rand_index(const std::vector<int>& true_labels,
             b_sums[cell.first] += cell.second;
         }
     }
-    
+
     double sum_ai2 = 0.0, sum_bj2 = 0.0;
     for (const auto& a : a_sums) sum_ai2 += (a.second * (a.second - 1)) / 2.0;
     for (const auto& b : b_sums) sum_bj2 += (b.second * (b.second - 1)) / 2.0;
-    
+
     double n_choose_2 = (n * (n - 1)) / 2.0;
     double expected = (sum_ai2 * sum_bj2) / n_choose_2;
     double max_index = (sum_ai2 + sum_bj2) / 2.0;
     double index = sum_nij2;
-    
+
     return (index - expected) / (max_index - expected + 1e-10);
 }
 
-std::vector<DataPoint> scale_features(const std::vector<DataPoint>& data) {
-    std::vector<DataPoint> scaled_data = data;
-    if (data.empty()) return scaled_data;
-    
-    int n_features = data[0].features.size();
-    std::vector<double> means(n_features, 0.0);
-    std::vector<double> stds(n_features, 0.0);
-    
-    for (const auto& point : data) {
-        for (int i = 0; i < n_features; ++i) {
-            means[i] += point.features[i];
+DataPoint* scale_features(DataPoint* data, size_t data_size, size_t n_features) {
+    if (data_size == 0) return data;
+
+    double* means = new double[n_features]();
+    double* stds = new double[n_features]();
+
+    for (size_t i = 0; i < data_size; ++i) {
+        for (size_t j = 0; j < n_features; ++j) {
+            means[j] += data[i].features[j];
         }
     }
-    for (int i = 0; i < n_features; ++i) {
-        means[i] /= data.size();
+    for (size_t j = 0; j < n_features; ++j) {
+        means[j] /= data_size;
     }
-    
-    for (const auto& point : data) {
-        for (int i = 0; i < n_features; ++i) {
-            double diff = point.features[i] - means[i];
-            stds[i] += diff * diff;
+
+    for (size_t i = 0; i < data_size; ++i) {
+        for (size_t j = 0; j < n_features; ++j) {
+            double diff = data[i].features[j] - means[j];
+            stds[j] += diff * diff;
         }
     }
-    for (int i = 0; i < n_features; ++i) {
-        stds[i] = sqrt(stds[i] / data.size());
-        if (stds[i] < 1e-9) stds[i] = 1e-9;
+    for (size_t j = 0; j < n_features; ++j) {
+        stds[j] = sqrt(stds[j] / data_size);
+        if (stds[j] < 1e-9) stds[j] = 1e-9;
     }
-    
-    for (auto& point : scaled_data) {
-        for (int i = 0; i < n_features; ++i) {
-            point.features[i] = (point.features[i] - means[i]) / stds[i];
+
+    DataPoint* scaled_data = new DataPoint[data_size];
+    for (size_t i = 0; i < data_size; ++i) {
+        scaled_data[i].features = new double[n_features];
+        for (size_t j = 0; j < n_features; ++j) {
+            scaled_data[i].features[j] = (data[i].features[j] - means[j]) / stds[j];
         }
+        scaled_data[i].true_label = data[i].true_label;
+        scaled_data[i].cluster = data[i].cluster;
     }
+
+    delete[] means;
+    delete[] stds;
     return scaled_data;
 }
 
-std::vector<DataPoint> read_csv(const std::string& filename) {
-    std::vector<DataPoint> data;
+DataPoint* read_csv(const std::string& filename, size_t& data_size, size_t& n_features) {
+    data_size = 0;
+    n_features = 0;
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Error opening file: " << filename << std::endl;
-        return data;
+        return nullptr;
     }
 
     std::string line;
-    getline(file, line); 
-    
+    getline(file, line);
+
     while (getline(file, line)) {
+        data_size++;
+    }
+    file.clear();
+    file.seekg(0);
+
+    getline(file, line);
+    if (getline(file, line)) {
         std::stringstream ss(line);
         std::string value;
-        std::vector<double> features;
-        
-        // Skip the index column
-        getline(ss, value, ',');  // Ignore the first value (index)
-        
-        // Read features
+        getline(ss, value, ',');
         while (getline(ss, value, ',')) {
-            features.push_back(std::stod(value));
+            n_features++;
         }
-        
-        // Last value is the true label
-        int true_label = (int)features.back();
-        features.pop_back();
-        data.push_back({features, true_label, -1});
+        n_features--;
+    }
+    file.clear();
+    file.seekg(0);
+    getline(file, line);
+
+    DataPoint* data = new DataPoint[data_size];
+    size_t idx = 0;
+    while (getline(file, line) && idx < data_size) {
+        std::stringstream ss(line);
+        std::string value;
+        getline(ss, value, ',');
+
+        data[idx].features = new double[n_features];
+        for (size_t i = 0; i < n_features; ++i) {
+            getline(ss, value, ',');
+            data[idx].features[i] = std::stod(value);
+        }
+        getline(ss, value, ',');
+        data[idx].true_label = std::stoi(value);
+        data[idx].cluster = -1;
+        idx++;
     }
     file.close();
     return data;
 }
 
-void write_predictions(const std::vector<DataPoint>& data, 
-                      const std::vector<int>& labels, 
-                      const std::string& filename) {
+void write_predictions(const DataPoint* data, const int* labels, size_t data_size, size_t n_features, const std::string& filename) {
     std::ofstream file(filename);
-    file << ",feature1,feature2,...,true_label,cluster\n";  // Match input format
-    
-    for (size_t i = 0; i < data.size(); ++i) {
-        file << i + 1 << ",";  // Write index
-        for (size_t j = 0; j < data[i].features.size(); ++j) {
+    file << ",feature1";
+    for (size_t i = 1; i < n_features; ++i) {
+        file << ",feature" << (i + 1);
+    }
+    file << ",true_label,cluster\n";
+
+    for (size_t i = 0; i < data_size; ++i) {
+        file << i + 1 << ",";
+        for (size_t j = 0; j < n_features; ++j) {
             file << data[i].features[j] << ",";
         }
         file << data[i].true_label << "," << labels[i] << "\n";
@@ -265,42 +309,57 @@ void write_predictions(const std::vector<DataPoint>& data,
 }
 
 int main() {
-    std::vector<DataPoint> raw_data = read_csv("../data/clustering/shape_clusters_include_y.csv");
-    if (raw_data.empty()) {
+    size_t data_size, n_features;
+    DataPoint* raw_data = read_csv("../data/clustering/shape_clusters_include_y.csv", data_size, n_features);
+    if (!raw_data || data_size == 0) {
         std::cerr << "No data loaded. Exiting." << std::endl;
         return 1;
     }
-    
-    std::vector<DataPoint> data = scale_features(raw_data);
-    
-    DBSCAN dbscan(0.25, 20);
+
+    DataPoint* data = scale_features(raw_data, data_size, n_features);
+
+    for (size_t i = 0; i < data_size; ++i) {
+        delete[] raw_data[i].features;
+    }
+    delete[] raw_data;
+
+    DBSCAN dbscan(0.1, 10);
     auto start = std::chrono::high_resolution_clock::now();
-    dbscan.fit(data);
+    dbscan.fit(data, data_size, n_features);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    
+
     std::cout << "Clustering time: " << duration.count() << " ms" << std::endl;
-    
-    std::vector<int> pred_labels = dbscan.get_labels();
-    std::vector<int> true_labels;
-    for (const auto& point : data) {
-        true_labels.push_back(point.true_label);
+
+    size_t label_count;
+    int* pred_labels = dbscan.get_labels(label_count);
+    int* true_labels = new int[data_size];
+    for (size_t i = 0; i < data_size; ++i) {
+        true_labels[i] = data[i].true_label;
     }
-    
+
     int n_clusters = 0;
-    for (int label : pred_labels) {
-        if (label >= 0) n_clusters = std::max(n_clusters, label + 1);
+    for (size_t i = 0; i < label_count; ++i) {
+        if (pred_labels[i] >= 0) {
+            n_clusters = std::max(n_clusters, pred_labels[i] + 1);
+        }
+    }
+    int noise_count = 0;
+    for (size_t i = 0; i < label_count; ++i) {
+        if (pred_labels[i] == -1) noise_count++;
     }
     std::cout << "Number of clusters found: " << n_clusters << std::endl;
-    std::cout << "Number of noise points: " << 
-                 std::count(pred_labels.begin(), pred_labels.end(), -1) << std::endl;
-    
-    double ami = adjusted_mutual_information(true_labels, pred_labels);
-    double ari = adjusted_rand_index(true_labels, pred_labels);
+    std::cout << "Number of noise points: " << noise_count << std::endl;
+
+    double ami = adjusted_mutual_information(true_labels, pred_labels, data_size);
+    double ari = adjusted_rand_index(true_labels, pred_labels, data_size);
     std::cout << "Adjusted Mutual Information (AMI): " << ami << std::endl;
     std::cout << "Adjusted Rand Index (ARI): " << ari << std::endl;
-    
-    write_predictions(data, pred_labels, "../results/dbscan/clusters.csv");
-    
+
+    write_predictions(data, pred_labels, data_size, n_features, "../results/dbscan/clusters.csv");
+
+    delete[] true_labels;
+    delete[] pred_labels;
+
     return 0;
 }
