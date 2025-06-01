@@ -1,0 +1,7 @@
+compile:
+- g++ 3D.cpp -frounding-math -m64 -o 3D.out -lcadnaOpenmpC -fopenmp  -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: 3D.out 512 8 100 power_512x8 temp_512x8 output.txt
+files: 3D.cpp
+log: 3D.log
+output: debug/

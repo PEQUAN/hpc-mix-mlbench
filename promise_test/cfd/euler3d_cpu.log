@@ -1,0 +1,296 @@
+06/01 14:38:00: 🤘 cadnaPromise 🤘
+06/01 14:38:00: Using the compiler: g++
+06/01 14:38:00: We are working with 1 file and 101 different types
+06/01 14:38:00: The expectation is 1 digits.
+06/01 14:38:00: a) Get a reference result with cadna (double)
+06/01 14:38:03: euler3d_cpu.cpp: In function ‘void compute_step_factor(int, double_st*, double_st*, double_st*)’:
+euler3d_cpu.cpp:148:30: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  148 |             compute_velocity(density, momentum, velocity);
+      |                              ^~~~~~~
+In file included from euler3d_cpu.cpp:1:
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:111:38: note:   initializing argument 1 of ‘void compute_velocity(double&, f3&, f3&)’
+  111 | inline void compute_velocity(double &density, f3 &momentum,
+      |                              ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:150:51: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  150 |             double_st pressure = compute_pressure(density, density_energy, speed_sqd);
+      |                                                   ^~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:123:43: note:   initializing argument 1 of ‘double_st compute_pressure(double&, double&, double&)’
+  123 | inline double_st compute_pressure(double &density, double &density_energy,
+      |                                   ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:151:63: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  151 |             double_st speed_of_sound = compute_speed_of_sound(density, pressure);
+      |                                                               ^~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:129:49: note:   initializing argument 1 of ‘double_st compute_speed_of_sound(double&, double&)’
+  129 | inline double_st compute_speed_of_sound(double &density, double &pressure) {
+      |                                         ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:154:27: error: call of overloaded ‘sqrt(double_st&)’ is ambiguous
+  154 |                 (std::sqrt(areas[i]) * (std::sqrt(speed_sqd) + speed_of_sound));
+      |                  ~~~~~~~~~^~~~~~~~~~
+In file included from /usr/include/features.h:502,
+                 from /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h:39,
+                 from /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h:679,
+                 from /usr/include/c++/13/bits/requires_hosted.h:31,
+                 from /usr/include/c++/13/iostream:38,
+                 from /home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:26:
+/usr/include/x86_64-linux-gnu/bits/mathcalls.h:143:1: note: candidate: ‘double sqrt(double)’
+  143 | __MATHCALL (sqrt,, (_Mdouble_ __x));
+      | ^~~~~~~~~~
+In file included from /home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:27:
+/usr/include/c++/13/cmath:438:3: note: candidate: ‘constexpr float std::sqrt(float)’
+  438 |   sqrt(float __x)
+      |   ^~~~
+/usr/include/c++/13/cmath:442:3: note: candidate: ‘constexpr long double std::sqrt(long double)’
+  442 |   sqrt(long double __x)
+      |   ^~~~
+euler3d_cpu.cpp:154:50: error: call of overloaded ‘sqrt(double_st&)’ is ambiguous
+  154 |                 (std::sqrt(areas[i]) * (std::sqrt(speed_sqd) + speed_of_sound));
+      |                                         ~~~~~~~~~^~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/mathcalls.h:143:1: note: candidate: ‘double sqrt(double)’
+  143 | __MATHCALL (sqrt,, (_Mdouble_ __x));
+      | ^~~~~~~~~~
+/usr/include/c++/13/cmath:438:3: note: candidate: ‘constexpr float std::sqrt(float)’
+  438 |   sqrt(float __x)
+      |   ^~~~
+/usr/include/c++/13/cmath:442:3: note: candidate: ‘constexpr long double std::sqrt(long double)’
+  442 |   sqrt(long double __x)
+      |   ^~~~
+euler3d_cpu.cpp: In function ‘void compute_flux(int, int*, double_st*, double_st*, double_st*, double_st*, f3, f3, f3, f3)’:
+euler3d_cpu.cpp:180:30: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  180 |             compute_velocity(density_i, momentum_i, velocity_i);
+      |                              ^~~~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:111:38: note:   initializing argument 1 of ‘void compute_velocity(double&, f3&, f3&)’
+  111 | inline void compute_velocity(double &density, f3 &momentum,
+      |                              ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:182:42: error: call of overloaded ‘sqrt(double_st&)’ is ambiguous
+  182 |             double_st speed_i = std::sqrt(speed_sqd_i);
+      |                                 ~~~~~~~~~^~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/mathcalls.h:143:1: note: candidate: ‘double sqrt(double)’
+  143 | __MATHCALL (sqrt,, (_Mdouble_ __x));
+      | ^~~~~~~~~~
+/usr/include/c++/13/cmath:438:3: note: candidate: ‘constexpr float std::sqrt(float)’
+  438 |   sqrt(float __x)
+      |   ^~~~
+/usr/include/c++/13/cmath:442:3: note: candidate: ‘constexpr long double std::sqrt(long double)’
+  442 |   sqrt(long double __x)
+      |   ^~~~
+euler3d_cpu.cpp:183:53: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  183 |             double_st pressure_i = compute_pressure(density_i, density_energy_i, speed_sqd_i);
+      |                                                     ^~~~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:123:43: note:   initializing argument 1 of ‘double_st compute_pressure(double&, double&, double&)’
+  123 | inline double_st compute_pressure(double &density, double &density_energy,
+      |                                   ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:184:65: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  184 |             double_st speed_of_sound_i = compute_speed_of_sound(density_i, pressure_i);
+      |                                                                 ^~~~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:129:49: note:   initializing argument 1 of ‘double_st compute_speed_of_sound(double&, double&)’
+  129 | inline double_st compute_speed_of_sound(double &density, double &pressure) {
+      |                                         ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:188:17: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  188 |                 density_i, momentum_i, density_energy_i, pressure_i, velocity_i,
+      |                 ^~~~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:87:47: note:   initializing argument 1 of ‘void compute_flux_contribution(double&, f3&, double&, double&, f3&, f3&, f3&, f3&, f3&)’
+   87 | inline void compute_flux_contribution(double &density, f3 &momentum,
+      |                                       ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:215:39: error: call of overloaded ‘sqrt(double_st)’ is ambiguous
+  215 |                 normal_len = std::sqrt(normal.x * normal.x + normal.y * normal.y +
+      |                              ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  216 |                                       normal.z * normal.z);
+      |                                       ~~~~~~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/mathcalls.h:143:1: note: candidate: ‘double sqrt(double)’
+  143 | __MATHCALL (sqrt,, (_Mdouble_ __x));
+      | ^~~~~~~~~~
+/usr/include/c++/13/cmath:438:3: note: candidate: ‘constexpr float std::sqrt(float)’
+  438 |   sqrt(float __x)
+      |   ^~~~
+/usr/include/c++/13/cmath:442:3: note: candidate: ‘constexpr long double std::sqrt(long double)’
+  442 |   sqrt(long double __x)
+      |   ^~~~
+euler3d_cpu.cpp:225:38: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  225 |                     compute_velocity(density_nb, momentum_nb, velocity_nb);
+      |                                      ^~~~~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:111:38: note:   initializing argument 1 of ‘void compute_velocity(double&, f3&, f3&)’
+  111 | inline void compute_velocity(double &density, f3 &momentum,
+      |                              ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:227:52: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  227 |                     pressure_nb = compute_pressure(density_nb, density_energy_nb, speed_sqd_nb);
+      |                                                    ^~~~~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:123:43: note:   initializing argument 1 of ‘double_st compute_pressure(double&, double&, double&)’
+  123 | inline double_st compute_pressure(double &density, double &density_energy,
+      |                                   ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:228:64: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  228 |                     speed_of_sound_nb = compute_speed_of_sound(density_nb, pressure_nb);
+      |                                                                ^~~~~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:129:49: note:   initializing argument 1 of ‘double_st compute_speed_of_sound(double&, double&)’
+  129 | inline double_st compute_speed_of_sound(double &density, double &pressure) {
+      |                                         ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:230:25: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  230 |                         density_nb, momentum_nb, density_energy_nb, pressure_nb,
+      |                         ^~~~~~~~~~
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:87:47: note:   initializing argument 1 of ‘void compute_flux_contribution(double&, f3&, double&, double&, f3&, f3&, f3&, f3&, f3&)’
+   87 | inline void compute_flux_contribution(double &density, f3 &momentum,
+      |                                       ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:238:50: error: call of overloaded ‘sqrt(double_st&)’ is ambiguous
+  238 |                              (speed_i + std::sqrt(speed_sqd_nb) +
+      |                                         ~~~~~~~~~^~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/mathcalls.h:143:1: note: candidate: ‘double sqrt(double)’
+  143 | __MATHCALL (sqrt,, (_Mdouble_ __x));
+      | ^~~~~~~~~~
+/usr/include/c++/13/cmath:438:3: note: candidate: ‘constexpr float std::sqrt(float)’
+  438 |   sqrt(float __x)
+      |   ^~~~
+/usr/include/c++/13/cmath:442:3: note: candidate: ‘constexpr long double std::sqrt(long double)’
+  442 |   sqrt(long double __x)
+      |   ^~~~
+euler3d_cpu.cpp: In function ‘int main(int, char**)’:
+euler3d_cpu.cpp:407:58: error: cannot bind non-const lvalue reference of type ‘double&’ to an rvalue of type ‘double’
+  407 |         compute_flux_contribution(ff_variable[VAR_DENSITY], ff_momentum,
+      |                                   ~~~~~~~~~~~~~~~~~~~~~~~^
+/home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:936:3: note:   after user-defined conversion: ‘double_st::operator double()’
+  936 |   operator double();
+      |   ^~~~~~~~
+euler3d_cpu.cpp:87:47: note:   initializing argument 1 of ‘void compute_flux_contribution(double&, f3&, double&, double&, f3&, f3&, f3&, f3&, f3&)’
+   87 | inline void compute_flux_contribution(double &density, f3 &momentum,
+      |                                       ~~~~~~~~^~~~~~~
+euler3d_cpu.cpp:467:41: error: cannot convert ‘double*’ to ‘double_st*’ in initialization
+  467 |     double_st *variables = alloc<double>(nelr * NVAR);
+      |                            ~~~~~~~~~~~~~^~~~~~~~~~~~~
+      |                                         |
+      |                                         double*
+euler3d_cpu.cpp:470:45: error: cannot convert ‘double*’ to ‘double_st*’ in initialization
+  470 |     double_st *old_variables = alloc<double>(nelr * NVAR);
+      |                                ~~~~~~~~~~~~~^~~~~~~~~~~~~
+      |                                             |
+      |                                             double*
+euler3d_cpu.cpp:471:38: error: cannot convert ‘double*’ to ‘double_st*’ in initialization
+  471 |     double_st *fluxes = alloc<double>(nelr * NVAR);
+      |                         ~~~~~~~~~~~~~^~~~~~~~~~~~~
+      |                                      |
+      |                                      double*
+euler3d_cpu.cpp:472:44: error: cannot convert ‘double*’ to ‘double_st*’ in initialization
+  472 |     double_st *step_factors = alloc<double>(nelr);
+      |                               ~~~~~~~~~~~~~^~~~~~
+      |                                            |
+      |                                            double*
+euler3d_cpu.cpp:479:21: error: no matching function for call to ‘copy<double>(double_st*&, double_st*&, int)’
+  479 |         copy<double>(old_variables, variables, nelr * NVAR);
+      |         ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+euler3d_cpu.cpp:48:28: note: candidate: ‘void copy(T*, T*, int) [with T = double]’
+   48 | template <typename T> void copy(T *dst, T *src, int N) {
+      |                            ^~~~
+euler3d_cpu.cpp:48:36: note:   no known conversion for argument 1 from ‘double_st*’ to ‘double*’
+   48 | template <typename T> void copy(T *dst, T *src, int N) {
+      |                                 ~~~^~~
+In file included from /usr/include/c++/13/string:51,
+                 from /usr/include/c++/13/bits/locale_classes.h:40,
+                 from /usr/include/c++/13/bits/ios_base.h:41,
+                 from /usr/include/c++/13/ios:44,
+                 from /usr/include/c++/13/ostream:40,
+                 from /usr/include/c++/13/iostream:41:
+/usr/include/c++/13/bits/stl_algobase.h:624:5: note: candidate: ‘template<class _II, class _OI> _OI std::copy(_II, _II, _OI)’
+  624 |     copy(_II __first, _II __last, _OI __result)
+      |     ^~~~
+/usr/include/c++/13/bits/stl_algobase.h:624:5: note:   template argument deduction/substitution failed:
+euler3d_cpu.cpp:479:22: note:   cannot convert ‘old_variables’ (type ‘double_st*’) to type ‘double’
+  479 |         copy<double>(old_variables, variables, nelr * NVAR);
+      |                      ^~~~~~~~~~~~~
+In file included from /usr/include/c++/13/bits/locale_facets.h:48,
+                 from /usr/include/c++/13/bits/basic_ios.h:37,
+                 from /usr/include/c++/13/ios:46:
+/usr/include/c++/13/bits/streambuf_iterator.h:339:5: note: candidate: ‘template<class _CharT> typename __gnu_cxx::__enable_if<std::__is_char<_Tp>::__value, std::ostreambuf_iterator<_CharT> >::__type std::copy(istreambuf_iterator<_CharT>, istreambuf_iterator<_CharT>, ostreambuf_iterator<_CharT>)’
+  339 |     copy(istreambuf_iterator<_CharT> __first,
+      |     ^~~~
+/usr/include/c++/13/bits/streambuf_iterator.h:339:5: note:   template argument deduction/substitution failed:
+/usr/include/c++/13/bits/streambuf_iterator.h: In substitution of ‘template<class _CharT> typename __gnu_cxx::__enable_if<std::__is_char<_Tp>::__value, std::ostreambuf_iterator<_CharT> >::__type std::copy(istreambuf_iterator<_CharT>, istreambuf_iterator<_CharT>, ostreambuf_iterator<_CharT>) [with _CharT = double]’:
+euler3d_cpu.cpp:479:21:   required from here
+/usr/include/c++/13/bits/streambuf_iterator.h:339:5: error: no type named ‘__type’ in ‘struct __gnu_cxx::__enable_if<false, std::ostreambuf_iterator<double, std::char_traits<double> > >’
+In file included from /usr/include/c++/13/algorithm:73,
+                 from /home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/half.hpp:245,
+                 from /home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:35:
+/usr/include/c++/13/pstl/glue_algorithm_defs.h:134:1: note: candidate: ‘template<class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2> __pstl::__internal::__enable_if_execution_policy<_ExecutionPolicy, _ForwardIterator2> std::copy(_ExecutionPolicy&&, _ForwardIterator1, _ForwardIterator1, _ForwardIterator2)’
+  134 | copy(_ExecutionPolicy&& __exec, _ForwardIterator1 __first, _ForwardIterator1 __last, _ForwardIterator2 __result);
+      | ^~~~
+/usr/include/c++/13/pstl/glue_algorithm_defs.h:134:1: note:   candidate expects 4 arguments, 3 provided
+euler3d_cpu.cpp:500:21: error: cannot convert ‘double_st*’ to ‘double*’
+  500 |     dealloc<double>(areas);
+      |                     ^~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:46:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   46 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+euler3d_cpu.cpp:502:21: error: cannot convert ‘double_st*’ to ‘double*’
+  502 |     dealloc<double>(normals);
+      |                     ^~~~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:46:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   46 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+euler3d_cpu.cpp:504:21: error: cannot convert ‘double_st*’ to ‘double*’
+  504 |     dealloc<double>(variables);
+      |                     ^~~~~~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:46:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   46 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+euler3d_cpu.cpp:505:21: error: cannot convert ‘double_st*’ to ‘double*’
+  505 |     dealloc<double>(old_variables);
+      |                     ^~~~~~~~~~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:46:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   46 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+euler3d_cpu.cpp:506:21: error: cannot convert ‘double_st*’ to ‘double*’
+  506 |     dealloc<double>(fluxes);
+      |                     ^~~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:46:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   46 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+euler3d_cpu.cpp:507:21: error: cannot convert ‘double_st*’ to ‘double*’
+  507 |     dealloc<double>(step_factors);
+      |                     ^~~~~~~~~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:46:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   46 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+
+06/01 14:38:03: Compilation failed
+Is Cadna installed? Did you link your cade with Cadna with `-lcadnac`, `-L$CADNA_PATH/lib` and `-I$CADNA_PATH/include` ?

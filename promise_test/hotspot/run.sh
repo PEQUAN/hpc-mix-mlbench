@@ -1,0 +1,1 @@
+g++ hotspot.cpp -o hotspot -fopenmp
