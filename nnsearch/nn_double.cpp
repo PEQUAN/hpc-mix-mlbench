@@ -1,18 +1,21 @@
 #include <iostream>
-#include <vector>
 #include <fstream>
-#include <sstream>
 #include <string>
 #include <chrono>
-#include <cmath>
 #include <queue>
-#include <algorithm>
+#include <cmath>
+#include <cstring>
 
 using namespace std;
 using namespace std::chrono;
 
+#define MAX_SAMPLES 10000
+#define MAX_FEATURES 100
+#define MAX_QUERIES 1000
+#define MAX_K 10
+#define MAX_LINE 4096 
 
-struct Neighbor { // Structure for priority queue (max-heap for largest distances)
+struct Neighbor { 
     int index;
     double distance_sq;
     bool operator<(const Neighbor& other) const {
@@ -20,8 +23,13 @@ struct Neighbor { // Structure for priority queue (max-heap for largest distance
     }
 };
 
-vector<pair<int, double>> kNearestNeighborSearch(const vector<double>& data, int n_samples, int n_features,
-                                                 const vector<double>& query, int k, double& runtime) {
+struct NeighborResult { 
+    int index;
+    double distance;
+};
+
+NeighborResult* kNearestNeighborSearch(const double* data, int n_samples, int n_features,
+                                      const double* query, int k, double& runtime) {
     auto start = high_resolution_clock::now();
 
     priority_queue<Neighbor> pq;
@@ -39,9 +47,10 @@ vector<pair<int, double>> kNearestNeighborSearch(const vector<double>& data, int
         }
     }
 
-    vector<pair<int, double>> k_nearest(k);
+    NeighborResult* k_nearest = new NeighborResult[k];
     for (int i = k - 1; i >= 0; i--) {
-        k_nearest[i] = {pq.top().index, sqrt(max(0.0, pq.top().distance_sq))};
+        k_nearest[i].index = pq.top().index;
+        k_nearest[i].distance = sqrt(max(0.0, pq.top().distance_sq));
         pq.pop();
     }
 
@@ -50,80 +59,87 @@ vector<pair<int, double>> kNearestNeighborSearch(const vector<double>& data, int
     return k_nearest;
 }
 
-
-
-vector<double> readCSV(const string& filename, int& rows, int& cols) {
-    vector<double> data;
-    
+double* readCSV(const string& filename, int& rows, int& cols) {
     ifstream file(filename);
     if (!file.is_open()) {
         cerr << "Error: Could not open file " << filename << endl;
         rows = 0;
         cols = 0;
-        return data;
+        return nullptr;
     }
-    
-    string line;
+
+    char line[MAX_LINE];
     rows = 0;
     bool first_row = true;
-    
-    while (getline(file, line)) {
-        stringstream ss(line);
-        string value;
-        vector<double> row;
-        
-        // Skip the first column (empty in header, index in data rows)
-        getline(ss, value, ',');
-        
-        // Handle the header row
+    double* data = nullptr;
+    int data_size = 0;
+
+    while (file.getline(line, MAX_LINE)) {
+        char* token = strtok(line, ","); // Skip first column
+        if (!token) continue;
+
         if (first_row) {
             first_row = false;
-            vector<string> headers;
-            while (getline(ss, value, ',')) {
-                headers.push_back(value);
-            }
-            cols = headers.size(); // Number of feature columns
+            cols = 0;
+            while ((token = strtok(nullptr, ","))) cols++;
             continue;
         }
-        
-        // Process data rows
-        while (getline(ss, value, ',')) {
-            if (value.empty()) {
-                cerr << "Error: Empty value in row " << rows + 1 << endl;
+
+        double row_data[MAX_FEATURES];
+        int col_count = 0;
+        while ((token = strtok(nullptr, ","))) {
+            if (col_count >= MAX_FEATURES) {
+                cerr << "Error: Too many features in row " << rows + 1 << endl;
                 rows = 0;
                 cols = 0;
                 file.close();
-                return data;
+                delete[] data;
+                return nullptr;
             }
             try {
-                row.push_back(stod(value));
+                row_data[col_count++] = stod(token);
             } catch (const std::invalid_argument& e) {
-                cerr << "Error: Invalid number '" << value << "' in row " << rows + 1 << endl;
+                cerr << "Error: Invalid number '" << token << "' in row " << rows + 1 << endl;
                 rows = 0;
                 cols = 0;
                 file.close();
-                return data;
+                delete[] data;
+                return nullptr;
             }
         }
-        
-        if (row.size() != cols) {
-            cerr << "Error: Inconsistent number of columns in row " << rows + 1 
-                 << " (expected " << cols << ", got " << row.size() << ")" << endl;
+
+        if (rows == 0) {
+            cols = col_count; // Set cols based on first data row
+            data = new double[MAX_SAMPLES * cols];
+        } else if (col_count != cols) {
+            cerr << "Error: Inconsistent number of columns in row " << rows + 1
+                 << " (expected " << cols << ", got " << col_count << ")" << endl;
             rows = 0;
             cols = 0;
             file.close();
-            return data;
+            delete[] data;
+            return nullptr;
         }
-        
-        data.insert(data.end(), row.begin(), row.end());
+
+        for (int j = 0; j < cols; j++) {
+            data[rows * cols + j] = row_data[j];
+        }
         rows++;
+        if (rows >= MAX_SAMPLES) {
+            cerr << "Error: Too many samples" << endl;
+            rows = 0;
+            cols = 0;
+            file.close();
+            delete[] data;
+            return nullptr;
+        }
     }
-    
+
     file.close();
     return data;
 }
 
-void writeCSV(const string& filename, const vector<double>& data, int rows, int cols) {
+void writeCSV(const string& filename, const double* data, int rows, int cols) {
     ofstream file(filename);
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -135,14 +151,13 @@ void writeCSV(const string& filename, const vector<double>& data, int rows, int 
     file.close();
 }
 
-
 int main(int argc, char *argv[]) {
     int n_samples, n_features, n_queries, n_features_q, k_gt, n_features_gt;
-    int k = 3; // Default number of neighbors
+    int k = 3; 
 
     if (argc > 1) k = atoi(argv[1]);
-    if (k <= 0) {
-        cerr << "Error: k must be positive" << endl;
+    if (k <= 0 || k > MAX_K) {
+        cerr << "Error: k must be positive and <= " << MAX_K << endl;
         return 1;
     }
 
@@ -150,9 +165,10 @@ int main(int argc, char *argv[]) {
 
     // Read dataset
     cout << "Reading dataset..." << endl;
-    vector<double> data = readCSV("../data/query/dataset.csv", n_samples, n_features);
+    double* data = readCSV("../data/query/dataset.csv", n_samples, n_features);
     if (n_samples <= 0 || n_features <= 0) {
         cerr << "Error: Invalid dataset dimensions" << endl;
+        delete[] data;
         return 1;
     }
     if (k > n_samples) {
@@ -162,51 +178,57 @@ int main(int argc, char *argv[]) {
 
     // Read queries
     cout << "Reading queries..." << endl;
-    vector<double> queries = readCSV("../data/query/queries.csv", n_queries, n_features_q);
+    double* queries = readCSV("../data/query/queries.csv", n_queries, n_features_q);
     if (n_features_q != n_features) {
         cerr << "Error: Query feature dimension mismatch" << endl;
+        delete[] data;
+        delete[] queries;
         return 1;
     }
 
     // Read ground truth
     cout << "Reading ground truth..." << endl;
-    vector<double> gt_data = readCSV("../data/query/ground_truth.csv", k_gt, n_features_gt);
+    double* gt_data = readCSV("../data/query/ground_truth.csv", k_gt, n_features_gt);
     if (k_gt != n_queries || n_features_gt != k) {
         cerr << "Error: Ground truth dimensions mismatch" << endl;
+        delete[] data;
+        delete[] queries;
+        delete[] gt_data;
         return 1;
     }
-    vector<vector<int>> ground_truth(n_queries, vector<int>(k));
+    int ground_truth[MAX_QUERIES][MAX_K];
     for (int i = 0; i < n_queries; i++) {
         for (int j = 0; j < k; j++) {
             ground_truth[i][j] = static_cast<int>(gt_data[i * k + j]);
         }
     }
+    delete[] gt_data;
 
     // Process queries
-    vector<double> all_results;
-    vector<double> runtimes(n_queries), accuracies(n_queries);
+    double* all_results = new double[n_queries * k * 2];
+    double runtimes[MAX_QUERIES], accuracies[MAX_QUERIES];
     for (int q = 0; q < n_queries; q++) {
-        vector<double> query(n_features);
+        double query[MAX_FEATURES];
         for (int j = 0; j < n_features; j++) {
             query[j] = queries[q * n_features + j];
         }
 
         double runtime;
-        auto k_nearest = kNearestNeighborSearch(data, n_samples, n_features, query, k, runtime);
+        NeighborResult* k_nearest = kNearestNeighborSearch(data, n_samples, n_features, query, k, runtime);
         runtimes[q] = runtime;
 
         cout << "Query " << q + 1 << " (double):\n";
         for (int i = 0; i < k; i++) {
-            cout << "Neighbor " << i + 1 << ": Index = " << k_nearest[i].first 
-                 << ", Distance = " << k_nearest[i].second << endl;
-            all_results.push_back(static_cast<double>(k_nearest[i].first));
-            all_results.push_back(k_nearest[i].second);
+            cout << "Neighbor " << i + 1 << ": Index = " << k_nearest[i].index
+                 << ", Distance = " << k_nearest[i].distance << endl;
+            all_results[q * k * 2 + i * 2] = static_cast<double>(k_nearest[i].index);
+            all_results[q * k * 2 + i * 2 + 1] = k_nearest[i].distance;
         }
 
         int correct = 0;
         for (int i = 0; i < k; i++) {
             for (int j = 0; j < k; j++) {
-                if (k_nearest[i].first == ground_truth[q][j]) {
+                if (k_nearest[i].index == ground_truth[q][j]) {
                     correct++;
                     break;
                 }
@@ -215,15 +237,20 @@ int main(int argc, char *argv[]) {
         accuracies[q] = static_cast<double>(correct) / k;
 
         cout << "Runtime: " << runtime << " ms, Accuracy: " << accuracies[q] << endl;
+        delete[] k_nearest;
     }
 
     writeCSV("../results/nnsearch/k_nearest_neighbors_double.csv", all_results, n_queries * k, 2);
-    vector<double> results_data(n_queries * 2);
+    double results_data[MAX_QUERIES * 2];
     for (int i = 0; i < n_queries; i++) {
         results_data[i * 2] = runtimes[i];
         results_data[i * 2 + 1] = accuracies[i];
     }
     writeCSV("../results/nnsearch/results_double.csv", results_data, n_queries, 2);
+
+    delete[] data;
+    delete[] queries;
+    delete[] all_results;
 
     return 0;
 }

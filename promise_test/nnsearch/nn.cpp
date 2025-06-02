@@ -1,102 +1,21 @@
 #include <iostream>
-#include <vector>
 #include <fstream>
-#include <sstream>
 #include <string>
 #include <chrono>
-#include <cmath>
 #include <queue>
-
-#include <algorithm>
+#include <cmath>
+#include <cstring>
 
 using namespace std;
 using namespace std::chrono;
 
-vector<__PROMISE__> readCSV(const string& filename, int& rows, int& cols) {
-    vector<__PROMISE__> data;
-    
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Error: Could not open file " << filename << endl;
-        rows = 0;
-        cols = 0;
-        return data;
-    }
-    
-    string line;
-    rows = 0;
-    bool first_row = true;
-    
-    while (getline(file, line)) {
-        stringstream ss(line);
-        string value;
-        vector<__PROMISE__> row;
-        
-        // Skip the first column (empty in header, index in data rows)
-        getline(ss, value, ',');
-        
-        // Handle the header row
-        if (first_row) {
-            first_row = false;
-            vector<string> headers;
-            while (getline(ss, value, ',')) {
-                headers.push_back(value);
-            }
-            cols = headers.size(); // Number of feature columns
-            continue;
-        }
-        
-        // Process data rows
-        while (getline(ss, value, ',')) {
-            if (value.empty()) {
-                cerr << "Error: Empty value in row " << rows + 1 << endl;
-                rows = 0;
-                cols = 0;
-                file.close();
-                return data;
-            }
-            try {
-                row.push_back(stod(value));
-            } catch (const std::invalid_argument& e) {
-                cerr << "Error: Invalid number '" << value << "' in row " << rows + 1 << endl;
-                rows = 0;
-                cols = 0;
-                file.close();
-                return data;
-            }
-        }
-        
-        if (row.size() != cols) {
-            cerr << "Error: Inconsistent number of columns in row " << rows + 1 
-                 << " (expected " << cols << ", got " << row.size() << ")" << endl;
-            rows = 0;
-            cols = 0;
-            file.close();
-            return data;
-        }
-        
-        data.insert(data.end(), row.begin(), row.end());
-        rows++;
-    }
-    
-    file.close();
-    return data;
-}
+#define MAX_SAMPLES 10000
+#define MAX_FEATURES 100
+#define MAX_QUERIES 1000
+#define MAX_K 10
+#define MAX_LINE 4096 
 
-void writeCSV(const string& filename, const vector<__PROMISE__>& data, int rows, int cols) {
-    ofstream file(filename);
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            file << data[i * cols + j];
-            if (j < cols - 1) file << ",";
-        }
-        file << "\n";
-    }
-    file.close();
-}
-
-
-struct Neighbor { // Structure for priority queue (max-heap for largest distances)
+struct Neighbor { 
     int index;
     __PROMISE__ distance_sq;
     bool operator<(const Neighbor& other) const {
@@ -104,9 +23,13 @@ struct Neighbor { // Structure for priority queue (max-heap for largest distance
     }
 };
 
-vector<pair<int, __PR_1__>> kNearestNeighborSearch(const vector<__PR_1__>& data, int n_samples, int n_features,
-                                                 const vector<__PR_1__>& query, int k, __PROMISE__& runtime) {
-    auto start = high_resolution_clock::now();
+struct NeighborResult { 
+    int index;
+    __PROMISE__ distance;
+};
+
+NeighborResult* kNearestNeighborSearch(const __PROMISE__* data, int n_samples, int n_features,
+                                      const __PROMISE__* query, int k) {
 
     priority_queue<Neighbor> pq;
     for (int i = 0; i < n_samples; i++) {
@@ -123,33 +46,114 @@ vector<pair<int, __PR_1__>> kNearestNeighborSearch(const vector<__PR_1__>& data,
         }
     }
 
-    vector<pair<int, __PR_1__>> k_nearest(k);
-    __PR_1__ max_val;
-    __PR_1__ top_val;
-
+    NeighborResult* k_nearest = new NeighborResult[k];
     for (int i = k - 1; i >= 0; i--) {
-        top_val = pq.top().distance_sq;
-        max_val = max((__PR_1__)0.0, top_val);
-        k_nearest[i] = {pq.top().index, sqrt(max_val)};
+        k_nearest[i].index = pq.top().index;
+        double temp = 0;
+        k_nearest[i].distance = sqrt(max(temp, pq.top().distance_sq));
         pq.pop();
     }
 
-    auto end = high_resolution_clock::now();
-    runtime = static_cast<__PROMISE__>(duration_cast<microseconds>(end - start).count()) / 1000.0;
     return k_nearest;
+}
+
+__PROMISE__* readCSV(const string& filename, int& rows, int& cols) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error: Could not open file " << filename << endl;
+        rows = 0;
+        cols = 0;
+        return nullptr;
+    }
+
+    char line[MAX_LINE];
+    rows = 0;
+    bool first_row = true;
+    __PROMISE__* data = nullptr;
+    int data_size = 0;
+
+    while (file.getline(line, MAX_LINE)) {
+        char* token = strtok(line, ","); // Skip first column
+        if (!token) continue;
+
+        if (first_row) {
+            first_row = false;
+            cols = 0;
+            while ((token = strtok(nullptr, ","))) cols++;
+            continue;
+        }
+
+        __PROMISE__ row_data[MAX_FEATURES];
+        int col_count = 0;
+        while ((token = strtok(nullptr, ","))) {
+            if (col_count >= MAX_FEATURES) {
+                cerr << "Error: Too many features in row " << rows + 1 << endl;
+                rows = 0;
+                cols = 0;
+                file.close();
+                delete[] data;
+                return nullptr;
+            }
+            try {
+                row_data[col_count++] = stod(token);
+            } catch (const std::invalid_argument& e) {
+                cerr << "Error: Invalid number '" << token << "' in row " << rows + 1 << endl;
+                rows = 0;
+                cols = 0;
+                file.close();
+                delete[] data;
+                return nullptr;
+            }
+        }
+
+        if (rows == 0) {
+            cols = col_count; // Set cols based on first data row
+            data = new __PROMISE__[MAX_SAMPLES * cols];
+        } else if (col_count != cols) {
+            cerr << "Error: Inconsistent number of columns in row " << rows + 1
+                 << " (expected " << cols << ", got " << col_count << ")" << endl;
+            rows = 0;
+            cols = 0;
+            file.close();
+            delete[] data;
+            return nullptr;
+        }
+
+        for (int j = 0; j < cols; j++) {
+            data[rows * cols + j] = row_data[j];
+        }
+        rows++;
+        if (rows >= MAX_SAMPLES) {
+            cerr << "Error: Too many samples" << endl;
+            rows = 0;
+            cols = 0;
+            file.close();
+            delete[] data;
+            return nullptr;
+        }
+    }
+
+    file.close();
+    return data;
 }
 
 int main(int argc, char *argv[]) {
     int n_samples, n_features, n_queries, n_features_q, k_gt, n_features_gt;
-    int k = 3; // Default number of neighbors
+    int k = 3; 
 
-    cout << "Using __PROMISE__ precision" << endl;
+    if (argc > 1) k = atoi(argv[1]);
+    if (k <= 0 || k > MAX_K) {
+        cerr << "Error: k must be positive and <= " << MAX_K << endl;
+        return 1;
+    }
+
 
     // Read dataset
     cout << "Reading dataset..." << endl;
-    vector<__PROMISE__> data = readCSV("dataset.csv", n_samples, n_features);
+    __PROMISE__* data = readCSV("dataset.csv", n_samples, n_features);
     if (n_samples <= 0 || n_features <= 0) {
         cerr << "Error: Invalid dataset dimensions" << endl;
+        delete[] data;
         return 1;
     }
     if (k > n_samples) {
@@ -159,51 +163,54 @@ int main(int argc, char *argv[]) {
 
     // Read queries
     cout << "Reading queries..." << endl;
-    vector<__PROMISE__> queries = readCSV("queries.csv", n_queries, n_features_q);
+    __PROMISE__* queries = readCSV("queries.csv", n_queries, n_features_q);
     if (n_features_q != n_features) {
         cerr << "Error: Query feature dimension mismatch" << endl;
+        delete[] data;
+        delete[] queries;
         return 1;
     }
 
     // Read ground truth
     cout << "Reading ground truth..." << endl;
-    vector<__PROMISE__> gt_data = readCSV("ground_truth.csv", k_gt, n_features_gt);
+    __PROMISE__* gt_data = readCSV("ground_truth.csv", k_gt, n_features_gt);
     if (k_gt != n_queries || n_features_gt != k) {
         cerr << "Error: Ground truth dimensions mismatch" << endl;
+        delete[] data;
+        delete[] queries;
+        delete[] gt_data;
         return 1;
     }
-    vector<vector<int>> ground_truth(n_queries, vector<int>(k));
+    int ground_truth[MAX_QUERIES][MAX_K];
     for (int i = 0; i < n_queries; i++) {
         for (int j = 0; j < k; j++) {
             ground_truth[i][j] = static_cast<int>(gt_data[i * k + j]);
         }
     }
+    delete[] gt_data;
 
     // Process queries
-    vector<__PROMISE__> all_results;
-    vector<__PROMISE__> runtimes(n_queries), accuracies(n_queries);
+    __PROMISE__* all_results = new __PROMISE__[n_queries * k * 2];
+    __PROMISE__  accuracies[MAX_QUERIES];
     for (int q = 0; q < n_queries; q++) {
-        vector<__PROMISE__> query(n_features);
+        __PROMISE__ query[MAX_FEATURES];
         for (int j = 0; j < n_features; j++) {
             query[j] = queries[q * n_features + j];
         }
 
-        __PROMISE__ runtime;
-        auto k_nearest = kNearestNeighborSearch(data, n_samples, n_features, query, k, runtime);
-        runtimes[q] = runtime;
+        NeighborResult* k_nearest = kNearestNeighborSearch(data, n_samples, n_features, query, k);
 
-        cout << "Query " << q + 1 << " (__PROMISE__):\n";
         for (int i = 0; i < k; i++) {
-            cout << "Neighbor " << i + 1 << ": Index = " << k_nearest[i].first 
-                 << ", Distance = " << k_nearest[i].second << endl;
-            all_results.push_back(static_cast<__PROMISE__>(k_nearest[i].first));
-            all_results.push_back(k_nearest[i].second);
+            cout << "Neighbor " << i + 1 << ": Index = " << k_nearest[i].index
+                 << ", Distance = " << k_nearest[i].distance << endl;
+            all_results[q * k * 2 + i * 2] = static_cast<__PROMISE__>(k_nearest[i].index);
+            all_results[q * k * 2 + i * 2 + 1] = k_nearest[i].distance;
         }
 
         int correct = 0;
         for (int i = 0; i < k; i++) {
             for (int j = 0; j < k; j++) {
-                if (k_nearest[i].first == ground_truth[q][j]) {
+                if (k_nearest[i].index == ground_truth[q][j]) {
                     correct++;
                     break;
                 }
@@ -211,8 +218,14 @@ int main(int argc, char *argv[]) {
         }
         accuracies[q] = static_cast<__PROMISE__>(correct) / k;
 
-        cout << "Runtime: " << runtime << " ms, Accuracy: " << accuracies[q] << endl;
+        delete[] k_nearest;
     }
+
+    PROMISE_CHECK_ARRAY(all_results, n_queries * k * 2);
+    // PROMISE_CHECK_ARRAY(accuracies, MAX_QUERIES);
+    delete[] data;
+    delete[] queries;
+    delete[] all_results;
 
     return 0;
 }
