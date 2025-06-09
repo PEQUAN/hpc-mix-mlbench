@@ -1,1 +1,1 @@
-promise --precs=hsd --nbDigits=1200  --noParsing
+promise --precs=hsd --nbDigits=10 --noParsing

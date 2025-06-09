@@ -1,366 +1,208 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <time.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <random>
+#include <algorithm>
+#include <chrono>
+#include <cmath>
 
-typedef struct {
+struct CSRMatrix {
     int n;
     double* values;
     int* col_indices;
     int* row_ptr;
-    int nnz;
-} CSRMatrix;
+    int nnz; // Number of non-zeros
+};
 
-double* allocate_vector(int n) {
-    double* v = (double*)malloc(n * sizeof(double));
-    if (!v) {
-        fprintf(stderr, "Error: Memory allocation failed for vector\n");
-        exit(1);
-    }
-    return v;
+bool compare_by_column(const std::pair<int, double>& a, const std::pair<int, double>& b) {
+    return a.first < b.first;
 }
 
-int* allocate_int_vector(int n) {
-    int* v = (int*)malloc(n * sizeof(int));
-    if (!v) {
-        fprintf(stderr, "Error: Memory allocation failed for int vector\n");
-        exit(1);
-    }
-    return v;
-}
-
-void deallocate_vector(double* v) {
-    if (v) free(v);
-}
-
-void deallocate_int_vector(int* v) {
-    if (v) free(v);
-}
-
-CSRMatrix allocate_csr_matrix(int n, int nnz) {
-    CSRMatrix A = {0, NULL, NULL, NULL, 0};
-    A.n = n;
-    A.nnz = nnz;
-    A.values = (double*)malloc(nnz * sizeof(double));
-    A.col_indices = (int*)malloc(nnz * sizeof(int));
-    A.row_ptr = (int*)malloc((n + 1) * sizeof(int));
-    if (!A.values || !A.col_indices || !A.row_ptr) {
-        fprintf(stderr, "Error: Memory allocation failed for CSR matrix\n");
-        deallocate_vector(A.values);
-        deallocate_int_vector(A.col_indices);
-        deallocate_int_vector(A.row_ptr);
-        exit(1);
-    }
-    return A;
-}
-
-void deallocate_csr_matrix(CSRMatrix* A) {
-    if (A) {
-        deallocate_vector(A->values);
-        deallocate_int_vector(A->col_indices);
-        deallocate_int_vector(A->row_ptr);
-        A->n = 0;
-        A->nnz = 0;
-    }
-}
-
-CSRMatrix read_mtx_file(const char* filename) {
-    CSRMatrix A = {0, NULL, NULL, NULL, 0};
-    FILE* file = fopen(filename, "r");
-    if (!file) {
-        fprintf(stderr, "Error: Could not open %s\n", filename);
+CSRMatrix read_mtx_file(const std::string& filename) {
+    CSRMatrix A = {0, nullptr, nullptr, nullptr, 0};
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open " << filename << std::endl;
         return A;
     }
 
-    char line[256];
-    while (fgets(line, sizeof(line), file) && line[0] == '%') {}
+    std::string line;
+    while (getline(file, line) && line[0] == '%') {} // Skip comments
 
+    std::stringstream ss(line);
     int n, m, nz;
-    if (sscanf(line, "%d %d %d", &n, &m, &nz) != 3) {
-        fprintf(stderr, "Error: Invalid matrix header\n");
-        fclose(file);
+    if (!(ss >> n >> m >> nz)) {
+        std::cerr << "Error: Invalid header format in " << filename << std::endl;
         return A;
     }
     if (n != m) {
-        fprintf(stderr, "Error: Matrix must be square\n");
-        fclose(file);
+        std::cerr << "Error: Matrix must be square" << std::endl;
         return A;
     }
-    if (n <= 0 || nz < 0) {
-        fprintf(stderr, "Error: Invalid matrix dimensions or non-zeros\n");
-        fclose(file);
-        return A;
-    }
+    A.n = n;
 
-    typedef struct { int row, col; double val; } Entry;
-    Entry* temp = (Entry*)malloc(2 * nz * sizeof(Entry)); // Account for symmetric entries
-    int* counts = (int*)calloc(n, sizeof(int));
-    if (!temp || !counts) {
-        fprintf(stderr, "Error: Memory allocation failed in read_mtx_file\n");
-        deallocate_vector((double*)temp);
-        deallocate_int_vector(counts);
-        fclose(file);
-        return A;
-    }
-
+    // Temporary storage for entries
+    struct Entry { int row, col; double val; };
+    Entry* entries = new Entry[2 * nz]; // Max possible entries (symmetric)
     int entry_count = 0;
+
     for (int k = 0; k < nz; ++k) {
-        if (!fgets(line, sizeof(line), file)) {
-            fprintf(stderr, "Error: Unexpected end of file at line %d\n", k + 2);
-            deallocate_vector((double*)temp);
-            deallocate_int_vector(counts);
-            fclose(file);
+        if (!getline(file, line)) {
+            std::cerr << "Error: Unexpected end of file" << std::endl;
+            delete[] entries;
             return A;
         }
+        ss.clear();
+        ss.str(line);
         int i, j;
         double val;
-        if (sscanf(line, "%d %d %lf", &i, &j, &val) != 3) {
-            fprintf(stderr, "Error: Invalid matrix entry at line %d\n", k + 2);
-            deallocate_vector((double*)temp);
-            deallocate_int_vector(counts);
-            fclose(file);
+        if (!(ss >> i >> j >> val)) {
+            std::cerr << "Error: Invalid entry format at line " << k + 1 << std::endl;
+            delete[] entries;
             return A;
         }
-        i--; j--;
+        i--; j--; // Convert to 0-based indexing
         if (i < 0 || i >= n || j < 0 || j >= n) {
-            fprintf(stderr, "Error: Invalid indices at line %d: (%d,%d)\n", k + 2, i + 1, j + 1);
-            deallocate_vector((double*)temp);
-            deallocate_int_vector(counts);
-            fclose(file);
+            std::cerr << "Error: Invalid indices at line " << k + 1 << std::endl;
+            delete[] entries;
             return A;
         }
-        if (entry_count + (i != j ? 2 : 1) > 2 * nz) {
-            fprintf(stderr, "Error: Too many non-zero entries\n");
-            deallocate_vector((double*)temp);
-            deallocate_int_vector(counts);
-            fclose(file);
-            return A;
-        }
-        temp[entry_count++] = (Entry){i, j, val};
-        counts[i]++;
-        if (i != j) {
-            temp[entry_count++] = (Entry){j, i, val};
-            counts[j]++;
-        }
+        entries[entry_count++] = {i, j, val};
+        if (i != j) entries[entry_count++] = {j, i, val}; // Symmetric matrix
     }
 
-    int total_nnz = entry_count;
-    A = allocate_csr_matrix(n, total_nnz);
+    // Count non-zeros per row
+    int* nnz_per_row = new int[n]();
+    for (int k = 0; k < entry_count; ++k) {
+        nnz_per_row[entries[k].row]++;
+    }
+
+    // Allocate CSR arrays
+    A.nnz = entry_count;
+    A.values = new double[entry_count];
+    A.col_indices = new int[entry_count];
+    A.row_ptr = new int[n + 1];
     A.row_ptr[0] = 0;
     for (int i = 0; i < n; ++i) {
-        A.row_ptr[i + 1] = A.row_ptr[i] + counts[i];
+        A.row_ptr[i + 1] = A.row_ptr[i] + nnz_per_row[i];
     }
 
-    int* current = (int*)calloc(n, sizeof(int));
-    if (!current) {
-        fprintf(stderr, "Error: Memory allocation failed for current array\n");
-        deallocate_csr_matrix(&A);
-        deallocate_vector((double*)temp);
-        deallocate_int_vector(counts);
-        fclose(file);
-        return A;
-    }
+    // Sort entries by row and column
+    std::sort(entries, entries + entry_count, 
+        [](const Entry& a, const Entry& b) { 
+            return a.row == b.row ? a.col < b.col : a.row < b.row; 
+        });
 
+    // Fill CSR arrays
     for (int k = 0; k < entry_count; ++k) {
-        int i = temp[k].row;
-        int idx = A.row_ptr[i] + current[i]++;
-        if (idx >= A.nnz) {
-            fprintf(stderr, "Error: Index out of bounds in CSR construction\n");
-            deallocate_csr_matrix(&A);
-            deallocate_vector((double*)temp);
-            deallocate_int_vector(counts);
-            deallocate_int_vector(current);
-            fclose(file);
-            return A;
-        }
-        A.values[idx] = temp[k].val;
-        A.col_indices[idx] = temp[k].col;
+        A.col_indices[k] = entries[k].col;
+        A.values[k] = entries[k].val;
     }
 
-    for (int i = 0; i < n; ++i) {
-        for (int j = A.row_ptr[i]; j < A.row_ptr[i + 1]; ++j) {
-            for (int k = j + 1; k < A.row_ptr[i + 1]; ++k) {
-                if (A.col_indices[j] > A.col_indices[k]) {
-                    int t = A.col_indices[j];
-                    A.col_indices[j] = A.col_indices[k];
-                    A.col_indices[k] = t;
-                    double tv = A.values[j];
-                    A.values[j] = A.values[k];
-                    A.values[k] = tv;
-                }
-            }
-        }
-    }
+    std::cout << "Loaded matrix: " << n << " x " << n << " with " << entry_count << " non-zeros" << std::endl;
 
-    int non_positive_diagonal = 0;
-    for (int i = 0; i < n; ++i) {
-        for (int j = A.row_ptr[i]; j < A.row_ptr[i + 1]; ++j) {
-            int col = A.col_indices[j];
-            double val = A.values[j];
-            if (col == i && val <= 0.0) {
-                non_positive_diagonal++;
-            }
-            int found = 0;
-            for (int k = A.row_ptr[col]; k < A.row_ptr[col + 1]; ++k) {
-                if (A.col_indices[k] == i) {
-                    if (fabs(A.values[k] - val) > 1e-10) {
-                        fprintf(stderr, "Warning: Matrix may not be symmetric at (%d,%d) vs (%d,%d): %e vs %e\n",
-                                i, col, col, i, val, A.values[k]);
-                    }
-                    found = 1;
-                    break;
-                }
-            }
-            if (!found && fabs(val) > 1e-10) {
-                fprintf(stderr, "Warning: Matrix may not be symmetric: missing (%d,%d)\n", col, i);
-            }
-        }
-    }
-    if (non_positive_diagonal > 0) {
-        fprintf(stderr, "Warning: Found %d non-positive diagonal elements\n", non_positive_diagonal);
-    }
-
-    deallocate_vector((double*)temp);
-    deallocate_int_vector(counts);
-    deallocate_int_vector(current);
-    fclose(file);
-    printf("Loaded matrix: %d x %d with %d non-zeros\n", n, n, A.nnz);
+    // Clean up
+    delete[] nnz_per_row;
+    delete[] entries;
     return A;
 }
 
-void matvec(const CSRMatrix* A, const double* x, double* y) {
-    if (!A || !x || !y) {
-        fprintf(stderr, "Error: Null pointer in matvec\n");
-        return;
-    }
-    for (int i = 0; i < A->n; ++i) {
-        double sum = 0.0, c = 0.0;
-        for (int j = A->row_ptr[i]; j < A->row_ptr[i + 1]; ++j) {
-            if (j >= A->nnz || A->col_indices[j] >= A->n) {
-                fprintf(stderr, "Error: Invalid index in matvec at row %d, index %d\n", i, j);
-                return;
-            }
-            double y_val = A->values[j] * x[A->col_indices[j]] - c;
-            double t = sum + y_val;
-            c = (t - sum) - y_val;
-            sum = t;
-        }
-        y[i] = sum;
-    }
+void free_csr_matrix(CSRMatrix& A) {
+    delete[] A.values;
+    delete[] A.col_indices;
+    delete[] A.row_ptr;
+    A.values = nullptr;
+    A.col_indices = nullptr;
+    A.row_ptr = nullptr;
+    A.n = 0;
+    A.nnz = 0;
 }
 
-void axpy(int n, double alpha, const double* x, const double* y, double* result) {
-    if (!x || !y || !result) {
-        fprintf(stderr, "Error: Null pointer in axpy\n");
-        return;
+double* matvec(const CSRMatrix& A, const double* x) {
+    double* y = new double[A.n]();
+    for (int i = 0; i < A.n; ++i) {
+        for (int j = A.row_ptr[i]; j < A.row_ptr[i + 1]; ++j) {
+            y[i] += A.values[j] * x[A.col_indices[j]];
+        }
     }
+    return y;
+}
+
+double dot(const double* a, const double* b, int n) {
+    double sum = 0.0;
+    for (int i = 0; i < n; ++i) {
+        sum += a[i] * b[i];
+    }
+    return sum;
+}
+
+void axpy(double alpha, const double* x, const double* y, int n, double* result) {
     for (int i = 0; i < n; ++i) {
         result[i] = alpha * x[i] + y[i];
     }
 }
 
-double dot(int n, const double* a, const double* b) {
-    if (!a || !b) {
-        fprintf(stderr, "Error: Null pointer in dot\n");
-        return 0.0;
-    }
-    double sum = 0.0, c = 0.0;
-    for (int i = 0; i < n; ++i) {
-        double y = a[i] * b[i] - c;
-        double t = sum + y;
-        c = (t - sum) - y;
-        sum = t;
-    }
-    return sum;
+double norm(const double* v, int n) {
+    return std::sqrt(std::abs(dot(v, v, n)));
 }
 
-double norm(int n, const double* v) {
-    if (!v) {
-        fprintf(stderr, "Error: Null pointer in norm\n");
-        return 1e-16;
-    }
-    double nrm = sqrt(fabs(dot(n, v, v)));
-    return (nrm < 1e-16) ? 1e-16 : nrm;
-}
-
-void compute_diagonal_preconditioner(const CSRMatrix* A, double* M) {
-    if (!A || !M) {
-        fprintf(stderr, "Error: Null pointer in compute_diagonal_preconditioner\n");
-        return;
-    }
-    for (int i = 0; i < A->n; ++i) {
+void compute_diagonal_preconditioner(const CSRMatrix& A, double* M) {
+    bool has_zero_diagonal = false;
+    for (int i = 0; i < A.n; ++i) {
         M[i] = 0.0;
-        for (int j = A->row_ptr[i]; j < A->row_ptr[i + 1]; ++j) {
-            if (j >= A->nnz || A->col_indices[j] >= A->n) {
-                fprintf(stderr, "Error: Invalid index in preconditioner at row %d, index %d\n", i, j);
-                return;
-            }
-            if (A->col_indices[j] == i) {
-                M[i] = A->values[j];
+        for (int j = A.row_ptr[i]; j < A.row_ptr[i + 1]; ++j) {
+            if (A.col_indices[j] == i) {
+                M[i] = A.values[j];
                 break;
             }
         }
-        if (fabs(M[i]) < 1e-10) {
-            M[i] = 1.0;
+        if (std::abs(M[i]) < 1e-10) {
+            has_zero_diagonal = true;
+            M[i] = 1.0; // Fallback for zero diagonal
         } else {
             M[i] = 1.0 / M[i];
         }
     }
+    if (has_zero_diagonal) {
+        std::cerr << "Warning: Matrix has zero or near-zero diagonal elements, which may affect convergence" << std::endl;
+    }
 }
 
-void apply_preconditioner(int n, const double* M, const double* r, double* z) {
-    if (!M || !r || !z) {
-        fprintf(stderr, "Error: Null pointer in apply_preconditioner\n");
-        return;
-    }
+void apply_preconditioner(const double* M, const double* r, int n, double* z) {
     for (int i = 0; i < n; ++i) {
         z[i] = M[i] * r[i];
     }
 }
 
-typedef struct {
+struct Solution {
     double* x;
     double residual;
     int iterations;
-    int status; // 0: success, 1: max iterations, 2: stagnation, 3: divergence
-} CGResult;
+};
 
-CGResult conjugate_gradient(const CSRMatrix* A, const double* b, int max_iter, double tol) {
-    CGResult result = {NULL, 0.0, 0, 0};
-    if (!A || !b || A->n <= 0 || max_iter <= 0 || tol <= 0.0) {
-        fprintf(stderr, "Error: Invalid input to conjugate_gradient\n");
-        return result;
+Solution conjugate_gradient(const CSRMatrix& A, const double* b, int max_iter = 1000, double tol = 1e-12) {
+    int n = A.n;
+    Solution result = {new double[n](), 0.0, 0};
+
+    double* r = new double[n];
+    double* p = new double[n];
+    double* z = new double[n];
+    double* Ap = new double[n];
+    double* M = new double[n];
+
+    // Initialize residual
+    for (int i = 0; i < n; ++i) {
+        r[i] = b[i];
+        result.x[i] = 0.0; // Explicitly initialize x to zero
     }
 
-    int n = A->n;
-    result.x = allocate_vector(n);
-    double* r = allocate_vector(n);
-    double* p = allocate_vector(n);
-    double* z = allocate_vector(n);
-    double* Ap = allocate_vector(n);
-    double* M = allocate_vector(n);
-
-    if (!result.x || !r || !p || !z || !Ap || !M) {
-        fprintf(stderr, "Error: Memory allocation failed in conjugate_gradient\n");
-        deallocate_vector(result.x);
-        deallocate_vector(r);
-        deallocate_vector(p);
-        deallocate_vector(z);
-        deallocate_vector(Ap);
-        deallocate_vector(M);
-        return result;
-    }
-
-    for (int i = 0; i < n; ++i) result.x[i] = 0.0;
-    memcpy(r, b, n * sizeof(double));
-    double b_norm = norm(n, b);
+    double b_norm = norm(b, n);
     if (b_norm < 1e-16) b_norm = 1e-16;
 
     compute_diagonal_preconditioner(A, M);
-    apply_preconditioner(n, M, r, z);
-    memcpy(p, z, n * sizeof(double));
-    double rz_old = dot(n, r, z);
+    apply_preconditioner(M, r, n, z);
+    for (int i = 0; i < n; ++i) p[i] = z[i];
+    double rz_old = dot(r, z, n);
     double tol2 = tol * tol * b_norm * b_norm;
 
     double initial_rz = rz_old;
@@ -368,146 +210,118 @@ CGResult conjugate_gradient(const CSRMatrix* A, const double* b, int max_iter, d
     int stagnant_count = 0;
     const double eps = 1e-16;
 
-    printf("Initial residual norm: %.2e\n", norm(n, r) / b_norm);
+    std::cout << "Initial residual norm: " << norm(r, n) / b_norm << std::endl;
 
     for (int k = 0; k < max_iter; ++k) {
-        matvec(A, p, Ap);
-        double pAp = dot(n, p, Ap);
-        if (fabs(pAp) < eps) {
-            result.status = 2;
-            fprintf(stderr, "Warning: pAp too small at iteration %d: %e\n", k, pAp);
+        // Compute Ap = A*p
+        delete[] Ap; // Free previous Ap
+        Ap = matvec(A, p);
+        double pAp = dot(p, Ap, n);
+        if (std::abs(pAp) < eps) {
+            std::cerr << "Error: pAp too small at iteration " << k + 1 << ": " << pAp << std::endl;
+            result.iterations = k + 1;
             break;
         }
         double alpha = rz_old / pAp;
-        axpy(n, alpha, p, result.x, result.x);
-        axpy(n, -alpha, Ap, r, r);
-        apply_preconditioner(n, M, r, z);
-        double rz_new = dot(n, r, z);
-        double rel_residual = norm(n, r) / b_norm;
 
-        printf("Iteration %d: residual norm = %.2e, alpha = %.2e, pAp = %.2e\n", k + 1, rel_residual, alpha, pAp);
+        // Update x: x = x + alpha*p
+        axpy(alpha, p, result.x, n, result.x);
 
-        if (rz_new > 1e10 * initial_rz || isnan(rz_new) || isinf(rz_new)) {
-            result.status = 3;
-            fprintf(stderr, "Warning: Divergence detected at iteration %d: rz = %e\n", k + 1, rz_new);
+        // Update r: r = r - alpha*Ap
+        axpy(-alpha, Ap, r, n, r);
+
+        // Check residual
+        double rel_residual = norm(r, n) / b_norm;
+        if (k % 100 == 0) {
+            std::cout << "Iteration " << k + 1 << ": Relative residual = " << rel_residual << std::endl;
+        }
+
+        // Apply preconditioner: z = M*r
+        apply_preconditioner(M, r, n, z);
+        double rz_new = dot(r, z, n);
+
+        // Check for divergence or numerical issues
+        if (rz_new > 1e10 * initial_rz || std::isnan(rz_new) || std::isinf(rz_new)) {
+            std::cerr << "Error: Divergence detected at iteration " << k + 1 << ": rz = " << rz_new << std::endl;
+            result.iterations = k + 1;
             break;
         }
 
-        if (fabs(rz_new - prev_rz) < eps * rz_new && k > 0) {
+        // Check for stagnation
+        if (std::abs(rz_new - prev_rz) < eps * rz_new && k > 0) {
             stagnant_count++;
             if (stagnant_count > 5) {
-                result.status = 2;
-                fprintf(stderr, "Warning: Stagnation detected at iteration %d\n", k + 1);
+                std::cerr << "Warning: Stagnation detected at iteration " << k + 1 << std::endl;
+                result.iterations = k + 1;
                 break;
             }
         } else {
             stagnant_count = 0;
         }
 
+        // Check convergence
         if (rel_residual < tol) {
-            result.status = 0;
+            result.iterations = k + 1;
             break;
         }
 
+        // Update p: p = z + beta*p
         double beta = rz_new / rz_old;
-        axpy(n, beta, p, z, p);
+        axpy(beta, p, z, n, p);
         rz_old = rz_new;
         prev_rz = rz_new;
-        result.iterations = k + 1;
     }
 
-    if (result.iterations >= max_iter && result.status == 0) {
-        result.status = 1;
-    }
-
-    result.residual = norm(n, r) / b_norm;
-    deallocate_vector(r);
-    deallocate_vector(p);
-    deallocate_vector(z);
-    deallocate_vector(Ap);
-    deallocate_vector(M);
+    result.residual = norm(r, n);
+    delete[] r;
+    delete[] p;
+    delete[] z;
+    delete[] Ap;
+    delete[] M;
     return result;
 }
 
-double* generate_rhs(int n, unsigned int seed) {
-    if (n <= 0) {
-        fprintf(stderr, "Error: Invalid dimension in generate_rhs\n");
-        return NULL;
-    }
-    double* b = allocate_vector(n);
-    srand(seed);
+double* generate_rhs(int n) {
+    double* b = new double[n];
+    std::mt19937 gen(42);
+    std::uniform_real_distribution<> dis(0, 1.0);
     for (int i = 0; i < n; ++i) {
-        b[i] = (double)rand() / RAND_MAX * 10.0;
+        b[i] = dis(gen);
     }
     return b;
 }
 
-void write_solution(const double* x, int n, const char* filename) {
-    if (!x || n <= 0 || !filename) {
-        fprintf(stderr, "Error: Invalid input to write_solution\n");
-        return;
-    }
-    FILE* file = fopen(filename, "w");
-    if (!file) {
-        fprintf(stderr, "Error opening output file %s\n", filename);
-        return;
-    }
-    fprintf(file, "x\n");
-    for (int i = 0; i < n; ++i) {
-        fprintf(file, "%.16e\n", x[i]);
-    }
-    fclose(file);
-}
-
 int main() {
-    const char* filename = "../data/suitesparse/1138_bus.mtx";
+    std::string filename = "../data/suitesparse/1138_bus.mtx";
     CSRMatrix A = read_mtx_file(filename);
     if (A.n == 0) {
-        fprintf(stderr, "Error: Failed to load matrix\n");
+        std::cerr << "Failed to load matrix" << std::endl;
+        free_csr_matrix(A);
         return 1;
     }
 
-    double* b = generate_rhs(A.n, 32);
-    if (!b) {
-        fprintf(stderr, "Error: Failed to generate RHS\n");
-        deallocate_csr_matrix(&A);
-        return 1;
-    }
+    double* b = generate_rhs(A.n);
 
-    clock_t start = clock();
-    CGResult result = conjugate_gradient(&A, b, A.n, 1e-6);
-    clock_t end = clock();
-    double duration = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
+    auto start = std::chrono::high_resolution_clock::now();
+    Solution result = conjugate_gradient(A, b, 2 * A.n, 1e-12);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - start;
 
-    printf("Matrix size: %d x %d\n", A.n, A.n);
-    printf("Training time: %.2f ms\n", duration);
-    printf("Final residual: %.2e\n", result.residual);
-    printf("Iterations to converge: %d\n", result.iterations);
-    switch (result.status) {
-        case 0: printf("Status: Converged\n"); break;
-        case 1: printf("Status: Max iterations reached\n"); break;
-        case 2: printf("Status: Stagnation detected\n"); break;
-        case 3: printf("Status: Divergence detected\n"); break;
-        default: printf("Status: Unknown\n"); break;
-    }
+    std::cout << "Matrix size: " << A.n << " x " << A.n << std::endl;
+    std::cout << "Training time: " << duration.count() << " ms" << std::endl;
+    std::cout << "Final residual: " << result.residual << std::endl;
+    std::cout << "Iterations to converge: " << result.iterations << std::endl;
 
-    double* Ax = allocate_vector(A.n);
-    double* temp = allocate_vector(A.n);
-    if (Ax && temp) {
-        matvec(&A, result.x, Ax);
-        axpy(A.n, -1.0, Ax, b, temp);
-        double verify_residual = norm(A.n, temp) / (norm(A.n, b) > 1e-16 ? norm(A.n, b) : 1.0);
-        printf("Verification residual: %.2e\n", verify_residual);
-    } else {
-        fprintf(stderr, "Error: Memory allocation failed for verification\n");
-    }
-
-    write_solution(result.x, A.n, "../results/cg/cg_solution.csv");
-
-    deallocate_csr_matrix(&A);
-    deallocate_vector(b);
-    deallocate_vector(result.x);
-    deallocate_vector(Ax);
-    deallocate_vector(temp);
+    // Verify the solution
+    double* Ax = matvec(A, result.x);
+    double* temp = new double[A.n];
+    axpy(-1.0, Ax, b, A.n, temp);
+    double verify_residual = norm(temp, A.n);
+    std::cout << "Verification residual: " << verify_residual << std::endl;
+    delete[] Ax;
+    delete[] temp;
+    delete[] b;
+    delete[] result.x;
+    free_csr_matrix(A);
     return 0;
 }
