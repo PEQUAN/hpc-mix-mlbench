@@ -175,7 +175,7 @@ struct Result {
     std::vector<double> residual_history;
 };
 
-Result bicgstab(const CSRMatrix& A, const double* b, int max_iter = 1000, double tol = 1e-8) {
+Result bicgstab(const CSRMatrix& A, const double* b, int max_iter = 1000, double tol = 1e-12) {
     int n = A.n;
     std::vector<double> x(n, 0.0);
     std::vector<double> r(n);
@@ -344,6 +344,7 @@ int main() {
     }
 
     double* b = generate_rhs(A);
+    std::vector<double> x_true(A.n, 1.0); // x_true = [1, 1, ..., 1]
 
     auto start = std::chrono::high_resolution_clock::now();
     Result result = bicgstab(A, b, 2 * A.n, 1e-8);
@@ -364,8 +365,10 @@ int main() {
     double verify_residual = norm(r_tilde, A.n);
     std::cout << "Verification preconditioned residual: " << verify_residual << std::endl;
     delete[] Ax; delete[] r_temp; delete[] M; delete[] r_tilde;
-
-    write_solution(result.x, A.n, "results/bicgstab/bicgstab_solution.csv", result.residual_history);
+    double* error = axpy(-1.0, x_true.data(), result.x, A.n);
+    double error_norm = norm(error, A.n);
+    std::cout << "Error norm vs x_true: " << error_norm << std::endl;
+    write_solution(result.x, A.n, "bicgstab_solution.csv", result.residual_history);
 
     delete[] b;
     delete[] result.x;

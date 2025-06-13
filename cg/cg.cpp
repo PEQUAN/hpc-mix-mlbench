@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cmath>
 #include <vector>
+#include <omp.h>
 
 struct CSRMatrix {
     int n;
@@ -101,30 +102,30 @@ void free_csr_matrix(CSRMatrix& A) {
     A.row_ptr = nullptr;
 }
 
-double* matvec(const CSRMatrix& A, const double* x) {
-    double* y = new double[A.n]();
+void matvec(const CSRMatrix& A, const double* x, double* y) {
+    #pragma omp parallel for
     for (int i = 0; i < A.n; ++i) {
+        y[i] = 0.0;
         for (int j = A.row_ptr[i]; j < A.row_ptr[i + 1]; ++j) {
             y[i] += A.values[j] * x[A.col_indices[j]];
         }
     }
-    return y;
 }
 
 double dot(const double* a, const double* b, int n) {
     double sum = 0.0;
+    #pragma omp parallel for reduction(+:sum)
     for (int i = 0; i < n; ++i) {
         sum += a[i] * b[i];
     }
     return sum;
 }
 
-double* axpy(double alpha, const double* x, const double* y, int n) {
-    double* result = new double[n];
+void axpy(double alpha, const double* x, const double* y, int n, double* result) {
+    #pragma omp parallel for
     for (int i = 0; i < n; ++i) {
         result[i] = alpha * x[i] + y[i];
     }
-    return result;
 }
 
 double norm(const double* v, int n) {
@@ -151,7 +152,7 @@ void compute_diagonal_preconditioner(const CSRMatrix& A, double* M) {
         }
         if (!found_diag || std::abs(M[i]) < 1e-10) {
             has_zero_diagonal = true;
-            M[i] = 1.0; // Fallback for zero or missing diagonal
+            M[i] = 1.0;
         } else {
             M[i] = 1.0 / M[i];
         }
@@ -163,6 +164,7 @@ void compute_diagonal_preconditioner(const CSRMatrix& A, double* M) {
 }
 
 void apply_preconditioner(const double* M, const double* r, int n, double* z) {
+    #pragma omp parallel for
     for (int i = 0; i < n; ++i) {
         z[i] = M[i] * r[i];
     }
@@ -175,20 +177,20 @@ struct Result {
     std::vector<double> residual_history;
 };
 
-Result conjugate_gradient(const CSRMatrix& A, const double* b, int max_iter = 1000, double tol = 1e-8) {
+Result pcg(const CSRMatrix& A, const double* b, int max_iter = 1000, double tol = 1e-12) {
     int n = A.n;
     std::vector<double> x(n, 0.0);
     std::vector<double> r(n);
     for (int i = 0; i < n; ++i) r[i] = b[i]; // r = b - Ax (x = 0)
-    std::vector<double> p(n);
     std::vector<double> z(n);
     std::vector<double> M(n);
     compute_diagonal_preconditioner(A, M.data());
     apply_preconditioner(M.data(), r.data(), n, z.data()); // z = M^{-1} r
+    std::vector<double> p(n);
     for (int i = 0; i < n; ++i) p[i] = z[i]; // p_0 = M^{-1} r_0
     std::vector<double> residual_history;
 
-    double rho = dot(r.data(), z.data(), n);
+    double r_z = dot(r.data(), z.data(), n);
     double initial_norm = norm(b, n);
     if (initial_norm < 0) {
         std::cerr << "Error: Initial b has invalid norm" << std::endl;
@@ -201,24 +203,26 @@ Result conjugate_gradient(const CSRMatrix& A, const double* b, int max_iter = 10
 
     int k;
     for (k = 0; k < max_iter; ++k) {
-        double* Ap = matvec(A, p.data());
-        double pAp = dot(p.data(), Ap, n);
-        if (std::abs(pAp) < 1e-10) {
-            std::cerr << "Breakdown: p^T A p = " << pAp << " at iteration " << k << std::endl;
+        std::vector<double> Ap(n);
+        matvec(A, p.data(), Ap.data());
+        double p_Ap = dot(p.data(), Ap.data(), n);
+        if (std::abs(p_Ap) < 1e-10) {
+            std::cerr << "Breakdown: p^T Ap = " << p_Ap << " at iteration " << k << std::endl;
             double* x_out = new double[n];
             for (int i = 0; i < n; ++i) x_out[i] = x[i];
-            double* r_temp = axpy(-1.0, matvec(A, x.data()), b, n);
+            double* r_temp = new double[n];
+            matvec(A, x.data(), r_temp);
+            axpy(-1.0, r_temp, b, n, r_temp);
             double* z_temp = new double[n];
             apply_preconditioner(M.data(), r_temp, n, z_temp);
             double r_norm = norm(z_temp, n);
             delete[] r_temp; delete[] z_temp;
             return {x_out, r_norm, k, residual_history};
         }
-        double alpha = rho / pAp;
-        for (int i = 0; i < n; ++i) x[i] += alpha * p[i];
-        for (int i = 0; i < n; ++i) r[i] -= alpha * Ap[i];
-        delete[] Ap;
-        apply_preconditioner(M.data(), r.data(), n, z.data()); // z = M^{-1} r
+        double alpha = r_z / p_Ap;
+        axpy(alpha, p.data(), x.data(), n, x.data());
+        axpy(-alpha, Ap.data(), r.data(), n, r.data());
+        apply_preconditioner(M.data(), r.data(), n, z.data());
         double r_norm = norm(z.data(), n);
         residual_history.push_back(r_norm);
         if (r_norm < tol_abs) {
@@ -226,22 +230,31 @@ Result conjugate_gradient(const CSRMatrix& A, const double* b, int max_iter = 10
             for (int i = 0; i < n; ++i) x_out[i] = x[i];
             return {x_out, r_norm, k + 1, residual_history};
         }
-        double rho_new = dot(r.data(), z.data(), n);
-        if (std::abs(rho_new) < 1e-10) {
-            std::cerr << "Breakdown: r^T z = " << rho_new << " at iteration " << k << std::endl;
+        double r_z_new = dot(r.data(), z.data(), n);
+        if (std::abs(r_z_new) < 1e-10) {
+            std::cerr << "Breakdown: r^T z = " << r_z_new << " at iteration " << k << std::endl;
             double* x_out = new double[n];
             for (int i = 0; i < n; ++i) x_out[i] = x[i];
+            double* r_temp = new double[n];
+            matvec(A, x.data(), r_temp);
+            axpy(-1.0, r_temp, b, n, r_temp);
+            double* z_temp = new double[n];
+            apply_preconditioner(M.data(), r_temp, n, z_temp);
+            double r_norm = norm(z_temp, n);
+            delete[] r_temp; delete[] z_temp;
             return {x_out, r_norm, k, residual_history};
         }
-        double beta = rho_new / rho;
-        for (int i = 0; i < n; ++i) p[i] = z[i] + beta * p[i];
-        rho = rho_new;
+        double beta = r_z_new / r_z;
+        axpy(beta, p.data(), z.data(), n, p.data());
+        r_z = r_z_new;
         if (k % 100 == 0) {
             std::cout << "Iteration " << k << ": Preconditioned Residual = " << r_norm << std::endl;
         }
     }
 
-    double* r_temp = axpy(-1.0, matvec(A, x.data()), b, n);
+    double* r_temp = new double[n];
+    matvec(A, x.data(), r_temp);
+    axpy(-1.0, r_temp, b, n, r_temp);
     double* z_temp = new double[n];
     apply_preconditioner(M.data(), r_temp, n, z_temp);
     double r_norm = norm(z_temp, n);
@@ -253,12 +266,13 @@ Result conjugate_gradient(const CSRMatrix& A, const double* b, int max_iter = 10
 
 double* generate_rhs(const CSRMatrix& A) {
     std::vector<double> x_true(A.n, 1.0); // x_true = [1, 1, ..., 1]
-    double* b = matvec(A, x_true.data());
+    double* b = new double[A.n];
+    matvec(A, x_true.data(), b);
     std::cout << "Generated b = A * x_true, where x_true = [1, 1, ..., 1]" << std::endl;
     return b;
 }
 
-void write_solution(const double* x, int n, const std::string& filename, const std::vector<double>& residual_history, const double* x_true) {
+void write_solution(const double* x, int n, const std::string& filename, const std::vector<double>& residual_history) {
     std::ofstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Error opening output file: " << filename << ". Check permissions or path." << std::endl;
@@ -267,10 +281,6 @@ void write_solution(const double* x, int n, const std::string& filename, const s
     file << "x\n";
     for (int i = 0; i < n; ++i) {
         file << x[i] << "\n";
-    }
-    file << "\nError vs x_true\n";
-    for (int i = 0; i < n; ++i) {
-        file << x[i] - x_true[i] << "\n";
     }
     file << "\nResidual History\n";
     for (size_t i = 0; i < residual_history.size(); ++i) {
@@ -288,10 +298,9 @@ int main() {
     }
 
     double* b = generate_rhs(A);
-    std::vector<double> x_true(A.n, 1.0); // x_true = [1, 1, ..., 1]
 
     auto start = std::chrono::high_resolution_clock::now();
-    Result result = conjugate_gradient(A, b, 2 * A.n, 1e-8);
+    Result result = pcg(A, b, 2 * A.n, 1e-8);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
@@ -300,20 +309,18 @@ int main() {
     std::cout << "Final preconditioned residual: " << result.residual << std::endl;
     std::cout << "Iterations to converge: " << result.iterations << std::endl;
 
-    double* Ax = matvec(A, result.x);
-    double* r_temp = axpy(-1.0, Ax, b, A.n);
+    double* r_temp = new double[A.n];
+    matvec(A, result.x, r_temp);
+    axpy(-1.0, r_temp, b, A.n, r_temp);
     double* M = new double[A.n];
     compute_diagonal_preconditioner(A, M);
     double* z_temp = new double[A.n];
     apply_preconditioner(M, r_temp, A.n, z_temp);
     double verify_residual = norm(z_temp, A.n);
     std::cout << "Verification preconditioned residual: " << verify_residual << std::endl;
-    double* error = axpy(-1.0, x_true.data(), result.x, A.n);
-    double error_norm = norm(error, A.n);
-    std::cout << "Error norm vs x_true: " << error_norm << std::endl;
-    delete[] Ax; delete[] r_temp; delete[] M; delete[] z_temp; delete[] error;
+    delete[] r_temp; delete[] M; delete[] z_temp;
 
-    write_solution(result.x, A.n, "results/cg/cg_solution.csv", result.residual_history, x_true.data());
+    write_solution(result.x, A.n, "pcg_solution.csv", result.residual_history);
 
     delete[] b;
     delete[] result.x;
