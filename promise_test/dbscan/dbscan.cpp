@@ -13,61 +13,48 @@ struct DataPoint {
     int cluster;
 };
 
+DataPoint* scale_features(DataPoint* data, size_t data_size, size_t n_features) {
+    if (data_size == 0) return data;
+
+    __PROMISE__* means = new __PROMISE__[n_features]();
+    __PROMISE__* stds = new __PROMISE__[n_features]();
+
+    for (size_t i = 0; i < data_size; ++i) {
+        for (size_t j = 0; j < n_features; ++j) {
+            means[j] += data[i].features[j];
+        }
+    }
+    for (size_t j = 0; j < n_features; ++j) {
+        means[j] /= data_size;
+    }
+
+    for (size_t i = 0; i < data_size; ++i) {
+        for (size_t j = 0; j < n_features; ++j) {
+            __PROMISE__ diff = data[i].features[j] - means[j];
+            stds[j] += diff * diff;
+        }
+    }
+    for (size_t j = 0; j < n_features; ++j) {
+        stds[j] = sqrt(stds[j] / data_size);
+        if (stds[j] < 1e-9) stds[j] = 1e-9;
+    }
+
+    DataPoint* scaled_data = new DataPoint[data_size];
+    for (size_t i = 0; i < data_size; ++i) {
+        scaled_data[i].features = new __PROMISE__[n_features];
+        for (size_t j = 0; j < n_features; ++j) {
+            scaled_data[i].features[j] = (data[i].features[j] - means[j]) / stds[j];
+        }
+        scaled_data[i].true_label = data[i].true_label;
+        scaled_data[i].cluster = data[i].cluster;
+    }
+
+    delete[] means;
+    delete[] stds;
+    return scaled_data;
+}
+
 class DBSCAN {
-private:
-    __PROMISE__ eps;
-    int min_pts;
-    DataPoint* data;
-    size_t data_size;
-    size_t n_features;
-
-    __PROMISE__ distance(const __PROMISE__* p1, const __PROMISE__* p2) {
-        __PROMISE__ sum = 0.0;
-        for (size_t i = 0; i < n_features; ++i) {
-            __PROMISE__ diff = p1[i] - p2[i];
-            sum += diff * diff;
-        }
-        return sqrt(sum);
-    }
-
-    int* find_neighbors(int point_idx, int& neighbor_count) {
-        neighbor_count = 0;
-        for (size_t i = 0; i < data_size; ++i) {
-            if (i != point_idx && distance(data[point_idx].features, data[i].features) <= eps) {
-                neighbor_count++;
-            }
-        }
-        int* neighbors = new int[neighbor_count];
-        int idx = 0;
-        for (size_t i = 0; i < data_size; ++i) {
-            if (i != point_idx && distance(data[point_idx].features, data[i].features) <= eps) {
-                neighbors[idx++] = i;
-            }
-        }
-        return neighbors;
-    }
-
-    void expand_cluster(int point_idx, int cluster_label, std::unordered_set<int>& visited) {
-        data[point_idx].cluster = cluster_label;
-        int neighbor_count;
-        int* neighbors = find_neighbors(point_idx, neighbor_count);
-
-        if (neighbor_count < min_pts) {
-            delete[] neighbors;
-            return;
-        }
-
-        for (int i = 0; i < neighbor_count; ++i) {
-            int neighbor_idx = neighbors[i];
-            if (visited.find(neighbor_idx) == visited.end()) {
-                visited.insert(neighbor_idx);
-                if (data[neighbor_idx].cluster == -1) {
-                    expand_cluster(neighbor_idx, cluster_label, visited);
-                }
-            }
-        }
-        delete[] neighbors;
-    }
 
 public:
     DBSCAN(__PROMISE__ epsilon = 0.01, int min_points = 5) : eps(epsilon), min_pts(min_points), data(nullptr), data_size(0), n_features(0) {}
@@ -113,6 +100,62 @@ public:
         }
         return labels;
     }
+
+private:
+    __PROMISE__ eps;
+    int min_pts;
+    DataPoint* data;
+    size_t data_size;
+    size_t n_features;
+    int* find_neighbors(int point_idx, int& neighbor_count) {
+        neighbor_count = 0;
+        for (size_t i = 0; i < data_size; ++i) {
+            if (i != point_idx && distance(data[point_idx].features, data[i].features) <= eps) {
+                neighbor_count++;
+            }
+        }
+        int* neighbors = new int[neighbor_count];
+        int idx = 0;
+        for (size_t i = 0; i < data_size; ++i) {
+            if (i != point_idx && distance(data[point_idx].features, data[i].features) <= eps) {
+                neighbors[idx++] = i;
+            }
+        }
+        return neighbors;
+    }
+    __PROMISE__ distance(const __PROMISE__* p1, const __PROMISE__* p2) {
+        __PROMISE__ sum = 0.0;
+        for (size_t i = 0; i < n_features; ++i) {
+            __PROMISE__ diff = p1[i] - p2[i];
+            sum += diff * diff;
+        }
+        return sqrt(sum);
+    }
+
+
+
+    void expand_cluster(int point_idx, int cluster_label, std::unordered_set<int>& visited) {
+        data[point_idx].cluster = cluster_label;
+        int neighbor_count;
+        int* neighbors = find_neighbors(point_idx, neighbor_count);
+
+        if (neighbor_count < min_pts) {
+            delete[] neighbors;
+            return;
+        }
+
+        for (int i = 0; i < neighbor_count; ++i) {
+            int neighbor_idx = neighbors[i];
+            if (visited.find(neighbor_idx) == visited.end()) {
+                visited.insert(neighbor_idx);
+                if (data[neighbor_idx].cluster == -1) {
+                    expand_cluster(neighbor_idx, cluster_label, visited);
+                }
+            }
+        }
+        delete[] neighbors;
+    }
+
 };
 
 __PROMISE__ adjusted_mutual_information(const int* true_labels, const int* pred_labels, size_t n) {
@@ -195,47 +238,6 @@ __PROMISE__ adjusted_rand_index(const int* true_labels, const int* pred_labels, 
     __PROMISE__ index = sum_nij2;
 
     return (index - expected) / (max_index - expected + 1e-10);
-}
-
-DataPoint* scale_features(DataPoint* data, size_t data_size, size_t n_features) {
-    if (data_size == 0) return data;
-
-    __PROMISE__* means = new __PROMISE__[n_features]();
-    __PROMISE__* stds = new __PROMISE__[n_features]();
-
-    for (size_t i = 0; i < data_size; ++i) {
-        for (size_t j = 0; j < n_features; ++j) {
-            means[j] += data[i].features[j];
-        }
-    }
-    for (size_t j = 0; j < n_features; ++j) {
-        means[j] /= data_size;
-    }
-
-    for (size_t i = 0; i < data_size; ++i) {
-        for (size_t j = 0; j < n_features; ++j) {
-            __PROMISE__ diff = data[i].features[j] - means[j];
-            stds[j] += diff * diff;
-        }
-    }
-    for (size_t j = 0; j < n_features; ++j) {
-        stds[j] = sqrt(stds[j] / data_size);
-        if (stds[j] < 1e-9) stds[j] = 1e-9;
-    }
-
-    DataPoint* scaled_data = new DataPoint[data_size];
-    for (size_t i = 0; i < data_size; ++i) {
-        scaled_data[i].features = new __PROMISE__[n_features];
-        for (size_t j = 0; j < n_features; ++j) {
-            scaled_data[i].features[j] = (data[i].features[j] - means[j]) / stds[j];
-        }
-        scaled_data[i].true_label = data[i].true_label;
-        scaled_data[i].cluster = data[i].cluster;
-    }
-
-    delete[] means;
-    delete[] stds;
-    return scaled_data;
 }
 
 DataPoint* read_csv(const std::string& filename, size_t& data_size, size_t& n_features) {

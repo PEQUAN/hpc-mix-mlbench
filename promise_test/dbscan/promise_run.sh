@@ -1,1 +1,1 @@
-promise --precs=cwbhsd --nbDigits=1  --noParsing
+promise --precs=cwbsd --nbDigits=1  --noParsing

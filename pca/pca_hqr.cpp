@@ -617,7 +617,7 @@ int main(int argc, char* argv[]) {
     double sparsity = 0.5;
 
     unsigned int seed = 42;
-    unsigned int n_components = 20;
+    unsigned int n_components = 10;
 
     if (argc > 1) {
         n_components = std::atoi(argv[1]);

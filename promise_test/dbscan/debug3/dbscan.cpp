@@ -180,8 +180,8 @@ flx::floatx<5, 2> adjusted_mutual_information(const int* true_labels, const int*
         for (const auto& cell : row.second) {
             float nij = cell.second;
             if (nij == 0) continue;
-            flx::floatx<5, 2> ai = a_sums[row.first];
-            float bj = b_sums[cell.first];
+            flx::floatx<8, 7> ai = a_sums[row.first];
+            flx::floatx<8, 7> bj = b_sums[cell.first];
             float denom = ai * bj;
             if (denom > 0) {
                 mi += nij * log(nij * n / denom + 1e-10);
@@ -193,14 +193,14 @@ flx::floatx<5, 2> adjusted_mutual_information(const int* true_labels, const int*
 
     flx::floatx<5, 2> h_true = 0.0;
     for (const auto& a : a_sums) {
-        float p = a.second / (flx::floatx<5, 2>)n;
+        float p = a.second / (flx::floatx<8, 7>)n;
         if (p > 0) h_true -= p * log(p);
     }
     h_true /= log(2.0);
 
     flx::floatx<5, 2> h_pred = 0.0;
     for (const auto& b : b_sums) {
-        float p = b.second / (flx::floatx<5, 2>)n;
+        float p = b.second / (flx::floatx<8, 7>)n;
         if (p > 0) h_pred -= p * log(p);
     }
     h_pred /= log(2.0);
