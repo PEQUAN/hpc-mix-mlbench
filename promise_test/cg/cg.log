@@ -1,6 +1,12 @@
-06/13 18:15:04: 🤘 cadnaPromise 🤘
-06/13 18:15:04: Using the compiler: g++
-06/13 18:15:04: We are working with 1 file and 72 different types
-06/13 18:15:04: The expectation is 200 digits.
-06/13 18:15:04: a) Get a reference result with cadna (double)
-06/13 18:15:08: ('The number of significant digits found with Cadna is lower than the expectation: ', 'Variable solution: expect 200 and found 11')
+06/22 15:16:36: 🤘 cadnaPromise 🤘
+06/22 15:16:36: Using the compiler: g++
+06/22 15:16:36: We are working with 1 file and 72 different types
+06/22 15:16:36: The expectation is 10 digits.
+06/22 15:16:36: a) Get a reference result with cadna (double)
+06/22 15:16:40: b) Check with highest format (Double)
+06/22 15:16:42: c) Delta-Debug Single/Double
+06/22 15:21:08: d) Delta-Debug Half/Single
+06/22 15:21:32: The final result contains 61x double, 10x float and 1x half_float::half.
+06/22 15:21:32: It tooks 296.18s
+06/22 15:21:32: 👉 304 compilations (261 failed) for 266.25s
+06/22 15:21:32: 👉 43 executions   (0 failed) for 1.63s

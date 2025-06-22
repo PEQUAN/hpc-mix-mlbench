@@ -9,9 +9,10 @@ CATEGORY_DISPLAY_NAMES = {
     'float': 'Single Precision',
     'half_float::half': 'fp16',
     'flx::floatx<8, 7>': 'bf16',
-    'flx::floatx<5, 2>': 'q52',
-    'flx::floatx<4, 3>': 'q43'
+    'flx::floatx<4, 3>': 'e4m3',
+    'flx::floatx<5, 2>': 'e5m2'
 }
+
 
 def run_experiments(method, digits):
     """Run experiments and collect precision settings."""
@@ -39,7 +40,7 @@ def run_experiments(method, digits):
             precision_settings.append({})
     return precision_settings
 
-def save_precision_settings(precision_settings, filename='precision_settings_h.json'):
+def save_precision_settings(precision_settings, filename='precision_settings_2.json'):
     """Save precision settings to a JSON file."""
     try:
         for setting in precision_settings:
@@ -57,7 +58,7 @@ def save_precision_settings(precision_settings, filename='precision_settings_h.j
         with open(filename, 'w') as f:
             json.dump([], f)
 
-def load_precision_settings(filename='precision_settings_h.json'):
+def load_precision_settings(filename='precision_settings_2.json'):
     """Load precision settings from a JSON file."""
     if not os.path.exists(filename):
         print(f"Error: {filename} does not exist, regenerating data...")
@@ -163,13 +164,13 @@ def plot_precision_settings(precision_settings, digits):
 
     plt.tick_params(axis='both', which='major', labelsize=16)
     plt.tight_layout()
-    plt.savefig('precision_db_h.png', bbox_inches='tight', dpi=300, transparent=False)
-    print("Plot saved as precision_db_h.png")
+    plt.savefig('precision2.png', bbox_inches='tight', dpi=300, transparent=False)
+    print("Plot saved as precision2.png")
     plt.show()
 
 if __name__ == "__main__":
-    method = 'cwhsd'
-    digits = [2, 4, 6, 8, 10]
+    method = 'chsd'
+    digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
     precision_settings = run_experiments(method, digits)
     save_precision_settings(precision_settings)
