@@ -27,7 +27,7 @@ Matrix generate_random_matrix(int n, unsigned int seed = 42) {
     std::mt19937 gen(seed);
     std::uniform_real_distribution<> dis(0.1, 0.5); 
 
-    int h = static_cast<int>(sqrt(n));
+    int h = static_cast<int>(sqrt((double)n));
     if (h * h != n) {
         std::cerr << "Error: n must be a perfect square for 2D grid" << std::endl;
         free_matrix(A);
@@ -219,7 +219,7 @@ Matrix restrict_matrix(const Matrix& A_fine) {
 
 void v_cycle(const Matrix& A, __PROMISE__* x, const __PROMISE__* b, int num_pre = 2, int num_post = 2) {
     int n = A.n;
-    int h = static_cast<int>(sqrt(n));
+    int h = static_cast<int>(sqrt((double)n));
     if (h <= 1) {
         gauss_seidel_smoother(A, x, b, 10); 
         return;

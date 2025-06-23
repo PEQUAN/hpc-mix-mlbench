@@ -92,6 +92,17 @@ CSRMatrix read_mtx_file(const std::string& filename) {
     return A;
 }
 
+double* generate_rhs(const CSRMatrix& A) {
+    double* x_true = new double[A.n];
+    for (int i = 0; i < A.n; ++i) x_true[i] = 1.0; // x_true = [1, 1, ..., 1]
+    double* b = new double[A.n];
+    matvec(A, x_true, b);
+    std::cout << "Generated b = A * x_true, where x_true = [1, 1, ..., 1]" << std::endl;
+    delete[] x_true;
+    return b;
+}
+
+
 void free_csr_matrix(CSRMatrix& A) {
     delete[] A.values;
     delete[] A.col_indices;
@@ -258,16 +269,6 @@ Result pcg(const CSRMatrix& A, const double* b, int max_iter = 1000, double tol 
     delete[] r_temp; delete[] z_temp;
     delete[] r; delete[] z; delete[] M; delete[] p;
     return {x, r_norm, k, residual_history, k};
-}
-
-double* generate_rhs(const CSRMatrix& A) {
-    double* x_true = new double[A.n];
-    for (int i = 0; i < A.n; ++i) x_true[i] = 1.0; // x_true = [1, 1, ..., 1]
-    double* b = new double[A.n];
-    matvec(A, x_true, b);
-    std::cout << "Generated b = A * x_true, where x_true = [1, 1, ..., 1]" << std::endl;
-    delete[] x_true;
-    return b;
 }
 
 void write_solution(const double* x, int n, const std::string& filename, const double* residual_history, int residual_history_size) {
