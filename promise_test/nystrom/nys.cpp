@@ -1,456 +1,639 @@
 #include <iostream>
 #include <fstream>
-#include <chrono>
+#include <sstream>
 #include <cmath>
+#include <stdexcept>
+#include <algorithm>
+#include <iomanip>
+#include <string>
+#include <chrono>
 #include <random>
+#include <cstring>
 
-
-struct DataPoint {
-    __PROMISE__* features; 
-    __PROMISE__ target;    
-    int n_features;
-};
-
-struct Matrix {
+class Matrix {
+public:
+    __PROMISE__* data;
     int rows, cols;
-    __PROMISE__* data; // Row-major storage
+
+    Matrix() : rows(0), cols(0), data(nullptr) {}
+
+    Matrix(int r, int c) : rows(r), cols(c) {
+        data = new __PROMISE__[r * c]();
+    }
+
+    Matrix(const Matrix& other) : rows(other.rows), cols(other.cols) {
+        data = new __PROMISE__[rows * cols];
+        std::memcpy(data, other.data, rows * cols * sizeof(__PROMISE__));
+    }
+
+    Matrix& operator=(const Matrix& other) {
+        if (this != &other) {
+            delete[] data;
+            rows = other.rows;
+            cols = other.cols;
+            data = new __PROMISE__[rows * cols];
+            std::memcpy(data, other.data, rows * cols * sizeof(__PROMISE__));
+        }
+        return *this;
+    }
+
+    Matrix(Matrix&& other) noexcept : rows(other.rows), cols(other.cols), data(other.data) {
+        other.rows = 0;
+        other.cols = 0;
+        other.data = nullptr;
+    }
+
+    Matrix& operator=(Matrix&& other) noexcept {
+        if (this != &other) {
+            delete[] data;
+            rows = other.rows;
+            cols = other.cols;
+            data = other.data;
+            other.rows = 0;
+            other.cols = 0;
+            other.data = nullptr;
+        }
+        return *this;
+    }
+
+    ~Matrix() {
+        delete[] data;
+    }
+
+    __PROMISE__ get(int i, int j) const {
+
+        return data[i * cols + j];
+    }
+
+    void set(int i, int j, __PROMISE__ value) {
+
+        data[i * cols + j] = value;
+    }
+
+    void resize(int r, int c) {
+        delete[] data;
+        rows = r;
+        cols = c;
+        data = new __PROMISE__[r * c]();
+    }
 };
 
-
-Matrix create_matrix(int r, int c) {// Allocate matrix in row-major order
-    Matrix A = {r, c, nullptr};
-    if (r > 0 && c > 0) {
-        A.data = new __PROMISE__[r * c]();
+Matrix read_csv(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open file: " + filename);
     }
-    return A;
-}
 
-// Free matrix memory
-void free_matrix(Matrix& A) {
-    if (A.data) {
-        delete[] A.data;
-        A.data = nullptr;
+    int max_rows = 1000; // Initial capacity
+    int max_cols = 11;
+    __PROMISE__** temp_data = new __PROMISE__*[max_rows];
+    for (int i = 0; i < max_rows; ++i) {
+        temp_data[i] = new __PROMISE__[max_cols];
     }
-    A.rows = A.cols = 0;
-}
+    int line_count = 0;
+    std::string line;
+    bool first_line = true;
+    const char* expected_headers[] = {"age", "sex", "bmi", "bp", "s1", "s2", "s3", "s4", "s5", "s6"};
+    int expected_cols = 10;
 
-// Access matrix element (i,j) with bounds checking, returns value
-__PROMISE__ matrix_at(const Matrix& A, int i, int j) {
-    if (i < 0 || i >= A.rows || j < 0 || j >= A.cols) {
-        std::cerr << "Error: Matrix access out of bounds at (" << i << "," << j
-                  << "), size (" << A.rows << "x" << A.cols << ")" << std::endl;
-        throw std::out_of_range("Matrix access out of bounds");
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string* tokens = new std::string[max_cols];
+        int token_count = 0;
+        std::string val;
+        while (std::getline(ss, val, ',')) {
+            if (token_count < max_cols) {
+                tokens[token_count++] = val;
+            }
+        }
+
+        if (first_line) {
+            if (token_count < expected_cols + 1) {
+                delete[] tokens;
+                for (int i = 0; i < max_rows; ++i) delete[] temp_data[i];
+                delete[] temp_data;
+                throw std::runtime_error("Invalid header: too few columns");
+            }
+            for (int i = 0; i < expected_cols; ++i) {
+                if (tokens[i + 1] != expected_headers[i]) {
+                    delete[] tokens;
+                    for (int i = 0; i < max_rows; ++i) delete[] temp_data[i];
+                    delete[] temp_data;
+                    throw std::runtime_error("Unexpected header at column " + std::to_string(i + 1));
+                }
+            }
+            first_line = false;
+            delete[] tokens;
+            continue;
+        }
+
+        if (token_count != expected_cols + 1) {
+            delete[] tokens;
+            for (int i = 0; i < max_rows; ++i) delete[] temp_data[i];
+            delete[] temp_data;
+            throw std::runtime_error("Inconsistent number of columns at line " + std::to_string(line_count + 2));
+        }
+
+        if (line_count >= max_rows) {
+            int new_max_rows = max_rows * 2;
+            __PROMISE__** new_temp_data = new __PROMISE__*[new_max_rows];
+            for (int i = 0; i < new_max_rows; ++i) {
+                new_temp_data[i] = new __PROMISE__[max_cols];
+            }
+            for (int i = 0; i < max_rows; ++i) {
+                std::memcpy(new_temp_data[i], temp_data[i], max_cols * sizeof(__PROMISE__));
+                delete[] temp_data[i];
+            }
+            delete[] temp_data;
+            temp_data = new_temp_data;
+            max_rows = new_max_rows;
+        }
+
+        for (int i = 1; i < token_count; ++i) {
+            try {
+                temp_data[line_count][i - 1] = std::stod(tokens[i]);
+            } catch (...) {
+                delete[] tokens;
+                for (int i = 0; i < max_rows; ++i) delete[] temp_data[i];
+                delete[] temp_data;
+                throw std::runtime_error("Invalid number at line " + std::to_string(line_count + 2) + ", column " + std::to_string(i));
+            }
+        }
+        line_count++;
+        delete[] tokens;
     }
-    return A.data[i * A.cols + j];
-}
 
-// Set matrix element (i,j) with bounds checking
-void set_matrix_at(Matrix& A, int i, int j, __PROMISE__ value) {
-    if (i < 0 || i >= A.rows || j < 0 || j >= A.cols) {
-        std::cerr << "Error: Matrix access out of bounds at (" << i << "," << j
-                  << "), size (" << A.rows << "x" << A.cols << ")" << std::endl;
-        throw std::out_of_range("Matrix access out of bounds");
+    if (line_count == 0) {
+        for (int i = 0; i < max_rows; ++i) delete[] temp_data[i];
+        delete[] temp_data;
+        throw std::runtime_error("Empty CSV file after header");
     }
-    A.data[i * A.cols + j] = value;
-}
 
-Matrix transpose(const Matrix& A) {
-    Matrix result = create_matrix(A.cols, A.rows);
-    if (!result.data) return result;
-    for (int i = 0; i < A.rows; ++i) {
-        for (int j = 0; j < A.cols; ++j) {
-            set_matrix_at(result, j, i, matrix_at(A, i, j));
+    Matrix X(line_count, expected_cols);
+    for (int i = 0; i < line_count; ++i) {
+        for (int j = 0; j < expected_cols; ++j) {
+            X.set(i, j, temp_data[i][j]);
         }
     }
-    return result;
+
+    for (int i = 0; i < max_rows; ++i) delete[] temp_data[i];
+    delete[] temp_data;
+
+    return X;
 }
 
+void preprocess_data(Matrix& X, bool standardize = true) {
+    int n = X.rows, p = X.cols;
+    __PROMISE__* mean = new __PROMISE__[p]();
+    __PROMISE__* stddev = new __PROMISE__[p]();
+
+    for (int j = 0; j < p; ++j) {
+        for (int i = 0; i < n; ++i) {
+            mean[j] += X.get(i, j);
+        }
+        mean[j] /= n;
+    }
+
+    for (int j = 0; j < p; ++j) {
+        for (int i = 0; i < n; ++i) {
+            X.set(i, j, X.get(i, j) - mean[j]);
+        }
+    }
+
+    if (standardize) {
+        for (int j = 0; j < p; ++j) {
+            for (int i = 0; i < n; ++i) {
+                stddev[j] += X.get(i, j) * X.get(i, j);
+            }
+            stddev[j] = sqrt(stddev[j] / (n - 1));
+            if (stddev[j] < 1e-10) {
+                std::cerr << "Warning: Near-zero variance in feature " << j << std::endl;
+                stddev[j] = 1.0;
+            }
+        }
+
+        for (int j = 0; j < p; ++j) {
+            for (int i = 0; i < n; ++i) {
+                X.set(i, j, X.get(i, j) / stddev[j]);
+            }
+        }
+    }
+
+    delete[] mean;
+    delete[] stddev;
+}
 
 Matrix matrix_multiply(const Matrix& A, const Matrix& B) {
     if (A.cols != B.rows) {
-        std::cerr << "Matrix multiplication error: incompatible dimensions ("
-                  << A.rows << "x" << A.cols << ") * (" << B.rows << "x" << B.cols << ")" << std::endl;
-        return create_matrix(0, 0);
+        throw std::runtime_error("Matrix dimensions mismatch for multiplication");
     }
-    Matrix result = create_matrix(A.rows, B.cols);
-    if (!result.data) return result;
+    Matrix C(A.rows, B.cols);
     for (int i = 0; i < A.rows; ++i) {
         for (int j = 0; j < B.cols; ++j) {
             __PROMISE__ sum = 0.0;
             for (int k = 0; k < A.cols; ++k) {
-                sum += matrix_at(A, i, k) * matrix_at(B, k, j);
+                sum += A.get(i, k) * B.get(k, j);
             }
-            set_matrix_at(result, i, j, sum);
+            C.set(i, j, sum);
         }
     }
-    return result;
+    return C;
 }
 
-
-Matrix pseudo_inverse(const Matrix& A) { // Pseudo-inverse using diagonal regularization
-    int n = A.rows, m = A.cols;
-    Matrix AtA = matrix_multiply(transpose(A), A);
-    if (!AtA.data) return create_matrix(0, 0);
-    Matrix result = create_matrix(m, n);
-    if (!result.data) {
-        free_matrix(AtA);
-        return result;
-    }
-
-    double lambda = 1e-6;
+Matrix compute_AAt(const Matrix& A) {
+    int m = A.rows;
+    Matrix AAt(m, m);
     for (int i = 0; i < m; ++i) {
-        __PROMISE__ diag = matrix_at(AtA, i, i) + lambda;
-        set_matrix_at(AtA, i, i, diag);
-    }
-
-    if (n == m && n <= 50) {
-        Matrix inv = create_matrix(m, m);
-        if (!inv.data) {
-            free_matrix(AtA);
-            free_matrix(result);
-            return create_matrix(0, 0);
-        }
-        for (int i = 0; i < m; ++i) {
-            set_matrix_at(inv, i, i, 1.0 / matrix_at(AtA, i, i));
-        }
-        Matrix temp = matrix_multiply(inv, transpose(A));
-        for (int i = 0; i < m; ++i) {
-            for (int j = 0; j < n; ++j) {
-                set_matrix_at(result, i, j, matrix_at(temp, i, j));
+        for (int j = i; j < m; ++j) {
+            __PROMISE__ sum = 0.0;
+            for (int k = 0; k < A.cols; ++k) {
+                sum += A.get(i, k) * A.get(j, k);
             }
-        }
-        free_matrix(inv);
-        free_matrix(temp);
-    }
-    free_matrix(AtA);
-    return result;
-}
-
-
-DataPoint* generate_random_data(int n_samples, int n_features, __PROMISE__ sparsity = 0.8, unsigned int seed = 42) {
-    if (sparsity < 0.0 || sparsity > 1.0) {// Generate random dataset with sparsity control
-        std::cerr << "Error: Sparsity must be between 0.0 and 1.0" << std::endl;
-        return nullptr;
-    }
-    if (n_samples <= 0 || n_features <= 0) {
-        std::cerr << "Error: Invalid dimensions n_samples=" << n_samples << ", n_features=" << n_features << std::endl;
-        return nullptr;
-    }
-
-    DataPoint* data = new DataPoint[n_samples];
-    std::mt19937 gen(seed);
-    std::uniform_real_distribution<> value_dis(-10.0, 10.0);
-    std::uniform_real_distribution<> sparsity_dis(0.0, 1.0);
-
-    for (int i = 0; i < n_samples; ++i) {
-        data[i].features = new __PROMISE__[n_features]();
-        data[i].n_features = n_features;
-        data[i].target = 0.0;
-
-        
-        std::uniform_int_distribution<> idx_dis(0, n_features - 1);// Ensure at least one non-zero element per row
-        int non_zero_idx = idx_dis(gen);
-        data[i].features[non_zero_idx] = value_dis(gen);
-
-        // Fill other elements with sparsity control
-        for (int j = 0; j < n_features; ++j) {
-            if (j == non_zero_idx) continue;
-            if (sparsity_dis(gen) >= sparsity) {
-                data[i].features[j] = value_dis(gen);
+            AAt.set(i, j, sum);
+            if (i != j) {
+                AAt.set(j, i, sum);
             }
         }
     }
-    return data;
+    return AAt;
 }
 
-// Free DataPoint array
-void free_data(DataPoint* data, int n_samples) {
-    if (!data) return;
-    for (int i = 0; i < n_samples; ++i) {
-        delete[] data[i].features;
-        data[i].features = nullptr;
+void jacobi_eigendecomposition(const Matrix& A, Matrix& eigenvectors, __PROMISE__* eigenvalues, int max_iter = 500) {
+    int n = A.rows;
+    if (n != A.cols) {
+        throw std::runtime_error("Matrix must be square for eigendecomposition");
     }
-    delete[] data;
-}
+    eigenvectors.resize(n, n);
+    double temp1 = 1.0, temp2 = 0.0;
+    for (int i = 0; i < n; ++i) {
+        eigenvalues[i] = 0.0;
+        for (int j = 0; j < n; ++j) {
+            eigenvectors.set(i, j, (i == j) ? temp1 : temp2);
+        }
+    }
+    Matrix B(A);
 
-
-DataPoint* scale_features(DataPoint* data, int n_samples, int n_features) {
-    // Scale features (standardization, handling sparse data)
-    if (!data || n_samples <= 0 || n_features <= 0) return nullptr;
-    DataPoint* scaled_data = new DataPoint[n_samples];
-    __PROMISE__* means = new __PROMISE__[n_features]();
-    __PROMISE__* stds = new __PROMISE__[n_features]();
-    int* counts = new int[n_features]();
-
-    // Initialize scaled_data
-    for (int i = 0; i < n_samples; ++i) {
-        scaled_data[i].features = new __PROMISE__[n_features]();
-        scaled_data[i].n_features = n_features;
-        scaled_data[i].target = data[i].target;
+    __PROMISE__ norm = 0.0;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            norm += B.get(i, j) * B.get(i, j);
+        }
     }
 
-    // Compute means (only for non-zero elements)
-    for (int i = 0; i < n_samples; ++i) {
-        for (int j = 0; j < n_features; ++j) {
-            scaled_data[i].features[j] = data[i].features[j];
-            if (data[i].features[j] != 0.0) {
-                means[j] += data[i].features[j];
-                counts[j]++;
+
+    double temp3 = 2.0;
+    norm = sqrt(norm);
+    __PROMISE__ tol = 1e-12 * norm;
+
+    for (int iter = 0; iter < max_iter; ++iter) {
+        bool converged = true;
+        for (int p = 0; p < n; ++p) {
+            for (int q = p + 1; q < n; ++q) {
+                __PROMISE__ a_pp = B.get(p, p), a_pq = B.get(p, q), a_qq = B.get(q, q);
+                if (abs(a_pq) < tol) continue;
+                converged = false;
+                
+                __PROMISE__ temp4 = -1;
+                __PROMISE__ temp5 = 0;
+                __PROMISE__ tau = (a_qq - a_pp) / (temp3 * a_pq);
+                __PROMISE__ t = (tau >= temp5 ? temp1 : temp4) / (abs(tau) + sqrt(temp1 + tau * tau));
+                __PROMISE__ c = temp1 / sqrt(1.0 + t * t);
+                __PROMISE__ s = t * c;
+
+                for (int i = 0; i < n; ++i) {
+                    __PROMISE__ bp = B.get(i, p), bq = B.get(i, q);
+                    B.set(i, p, c * bp - s * bq);
+                    if (i != p && i != q) {
+                        B.set(p, i, c * bp - s * bq);
+                    }
+                    B.set(i, q, s * bp + c * bq);
+                    if (i != p && i != q) {
+                        B.set(q, i, s * bp + c * bq);
+                    }
+                }
+                B.set(p, p, c * c * a_pp - 2 * c * s * a_pq + s * s * a_qq);
+                B.set(q, q, s * s * a_pp + 2 * c * s * a_pq + c * c * a_qq);
+                B.set(p, q, 0.0);
+                B.set(q, p, 0.0);
+
+                for (int i = 0; i < n; ++i) {
+                    __PROMISE__ vp = eigenvectors.get(i, p), vq = eigenvectors.get(i, q);
+                    eigenvectors.set(i, p, c * vp - s * vq);
+                    eigenvectors.set(i, q, s * vp + c * vq);
+                }
+            }
+        }
+        if (converged) {
+            std::cout << "Jacobi converged in " << iter + 1 << " iterations" << std::endl;
+            break;
+        }
+    }
+
+    for (int i = 0; i < n; ++i) {
+        eigenvalues[i] = B.get(i, i);
+        if (eigenvalues[i] < 0.0 && abs(eigenvalues[i]) > 1e-10 * norm) {
+            std::cerr << "Warning: Significant negative eigenvalue: " << eigenvalues[i] << std::endl;
+        }
+    }
+
+    int* indices = new int[n];
+    for (int i = 0; i < n; ++i) indices[i] = i;
+    for (int i = 0; i < n - 1; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            if (eigenvalues[indices[i]] < eigenvalues[indices[j]]) {
+                std::swap(indices[i], indices[j]);
             }
         }
     }
-    for (int j = 0; j < n_features; ++j) {
-        double temp = 1.0;
-        means[j] = counts[j] > 0 ? means[j] / counts[j] : temp;
-    }
-
-    // Compute standard deviations
-    for (int i = 0; i < n_samples; ++i) {
-        for (int j = 0; j < n_features; ++j) {
-            if (data[i].features[j] != 0.0) {
-                __PROMISE__ diff = data[i].features[j] - means[j];
-                stds[j] += diff * diff;
-            }
+    Matrix temp_eigenvectors(n, n);
+    __PROMISE__* temp_eigenvalues = new __PROMISE__[n];
+    for (int i = 0; i < n; ++i) {
+        temp_eigenvalues[i] = eigenvalues[indices[i]];
+        for (int j = 0; j < n; ++j) {
+            temp_eigenvectors.set(j, i, eigenvectors.get(j, indices[i]));
         }
     }
-    for (int j = 0; j < n_features; ++j) {
-        double temp = 1.0;
-        stds[j] = counts[j] > 0 ? sqrt(stds[j] / counts[j]) : temp;
-        if (stds[j] < 1e-9) stds[j] = 1e-9;
-    }
-
-    // Scale features (preserve zeros)
-    for (int i = 0; i < n_samples; ++i) {
-        for (int j = 0; j < n_features; ++j) {
-            if (data[i].features[j] != 0.0) {
-                scaled_data[i].features[j] = (data[i].features[j] - means[j]) / stds[j];
-            }
-        }
-    }
-
-    delete[] means;
-    delete[] stds;
-    delete[] counts;
-    return scaled_data;
+    eigenvectors = temp_eigenvectors;
+    
+    delete[] indices;
+    delete[] temp_eigenvalues;
 }
 
-// Convert DataPoint array to Matrix
-Matrix data_to_matrix(DataPoint* data, int n_samples, int n_features) {
-    Matrix X = create_matrix(n_samples, n_features);
-    if (!X.data) return X;
-    for (int i = 0; i < n_samples; ++i) {
-        for (int j = 0; j < n_features; ++j) {
-            set_matrix_at(X, i, j, data[i].features[j]);
-        }
-    }
-    return X;
-}
-
-class Nystrom {
-private:
+struct NystromResult {
+    Matrix eigenvectors;
+    __PROMISE__* eigenvalues;
+    Matrix approximation;
+    __PROMISE__ reconstruction_error;
     int n_components;
-    Matrix C;      // n_samples x n_components
-    Matrix W_inv;  // n_components x n_components
-    int* sampled_indices;
 
-public:
-    Nystrom(int k = 5) : n_components(k), sampled_indices(nullptr) {
-        C = create_matrix(0, 0);
-        W_inv = create_matrix(0, 0);
-    }
-    ~Nystrom() {
-        free_matrix(C);
-        free_matrix(W_inv);
-        delete[] sampled_indices;
-        sampled_indices = nullptr;
+    NystromResult(int m, int k)
+        : eigenvectors(m, k), approximation(m, m), reconstruction_error(0.0), n_components(k) {
+        eigenvalues = new __PROMISE__[k]();
     }
 
-    void fit(const Matrix& X) {
-        if (X.rows <= 0 || X.cols <= 0 || !X.data) {
-            std::cerr << "Error: Invalid input matrix for fit" << std::endl;
-            return;
-        }
-        int n_samples = X.rows;
-        int n_features = X.cols;
-        if (n_components > n_features) n_components = n_features;
-
-        // Free previous allocations
-        free_matrix(C);
-        free_matrix(W_inv);
-        delete[] sampled_indices;
-
-        // Randomly select n_components indices
-        int* indices = new int[n_features];
-        for (int i = 0; i < n_features; ++i) indices[i] = i;
-        std::mt19937 gen(42);
-        for (int i = n_features - 1; i > 0; --i) {
-            std::uniform_int_distribution<> dis(0, i);
-            int j = dis(gen);
-            int temp = indices[i];
-            indices[i] = indices[j];
-            indices[j] = temp;
-        }
-        sampled_indices = new int[n_components];
-        for (int i = 0; i < n_components; ++i) {
-            sampled_indices[i] = indices[i];
-        }
-        delete[] indices;
-
-        // Build C matrix
-        C = create_matrix(n_samples, n_components);
-        if (!C.data) {
-            std::cerr << "Error: Failed to allocate C matrix" << std::endl;
-            return;
-        }
-        for (int i = 0; i < n_samples; ++i) {
-            for (int j = 0; j < n_components; ++j) {
-                set_matrix_at(C, i, j, matrix_at(X, i, sampled_indices[j]));
-            }
-        }
-
-        // Compute W = C^T * C and its pseudo-inverse
-        Matrix W = matrix_multiply(transpose(C), C);
-        if (!W.data) {
-            std::cerr << "Error: Failed to compute W matrix" << std::endl;
-            free_matrix(C);
-            return;
-        }
-        W_inv = pseudo_inverse(W);
-        free_matrix(W);
+    NystromResult(const NystromResult& other)
+        : eigenvectors(other.eigenvectors), approximation(other.approximation),
+          reconstruction_error(other.reconstruction_error), n_components(other.n_components) {
+        eigenvalues = new __PROMISE__[n_components];
+        std::memcpy(eigenvalues, other.eigenvalues, n_components * sizeof(__PROMISE__));
     }
 
-    Matrix transform(const Matrix& X) {
-        if (!C.data || !W_inv.data) {
-            std::cerr << "Error: Nystrom not fitted properly" << std::endl;
-            return create_matrix(0, 0);
+    NystromResult& operator=(const NystromResult& other) {
+        if (this != &other) {
+            delete[] eigenvalues;
+            eigenvectors = other.eigenvectors;
+            approximation = other.approximation;
+            reconstruction_error = other.reconstruction_error;
+            n_components = other.n_components;
+            eigenvalues = new __PROMISE__[n_components];
+            std::memcpy(eigenvalues, other.eigenvalues, n_components * sizeof(__PROMISE__));
         }
-        // Compute X_reduced = C * W_inv
-        Matrix result = matrix_multiply(C, W_inv); // (n_samples x n_components) * (n_components x n_components) = n_samples x n_components
-        if (!result.data) {
-            std::cerr << "Error: Failed to compute C * W_inv" << std::endl;
-            return create_matrix(0, 0);
-        }
-        return result;
+        return *this;
     }
 
-    Matrix reconstruct(const Matrix& X) {
-        if (!C.data || !W_inv.data) {
-            std::cerr << "Error: Nystrom not fitted properly" << std::endl;
-            return create_matrix(0, 0);
+    NystromResult(NystromResult&& other) noexcept
+        : eigenvectors(std::move(other.eigenvectors)),
+          approximation(std::move(other.approximation)),
+          reconstruction_error(other.reconstruction_error),
+          n_components(other.n_components),
+          eigenvalues(other.eigenvalues) {
+        other.eigenvalues = nullptr;
+    }
+
+    NystromResult& operator=(NystromResult&& other) noexcept {
+        if (this != &other) {
+            delete[] eigenvalues;
+            eigenvectors = std::move(other.eigenvectors);
+            approximation = std::move(other.approximation);
+            reconstruction_error = other.reconstruction_error;
+            n_components = other.n_components;
+            eigenvalues = other.eigenvalues;
+            other.eigenvalues = nullptr;
         }
-        // Compute X_reconstructed = C * W_inv * C^T * X
-        Matrix Ct = transpose(C); // n_components x n_samples
-        Matrix temp1 = matrix_multiply(Ct, X); // (n_components x n_samples) * (n_samples x n_features) = n_components x n_features
-        free_matrix(Ct);
-        if (!temp1.data) {
-            std::cerr << "Error: Failed to compute C^T * X" << std::endl;
-            return create_matrix(0, 0);
-        }
-        Matrix temp2 = matrix_multiply(W_inv, temp1); // (n_components x n_components) * (n_components x n_features) = n_components x n_features
-        free_matrix(temp1);
-        if (!temp2.data) {
-            std::cerr << "Error: Failed to compute W_inv * (C^T * X)" << std::endl;
-            return create_matrix(0, 0);
-        }
-        Matrix result = matrix_multiply(C, temp2); // (n_samples x n_components) * (n_components x n_features) = n_samples x n_features
-        free_matrix(temp2);
-        if (!result.data) {
-            std::cerr << "Error: Failed to compute C * (W_inv * C^T * X)" << std::endl;
-            return create_matrix(0, 0);
-        }
-        return result;
+        return *this;
+    }
+
+    ~NystromResult() {
+        delete[] eigenvalues;
     }
 };
 
-// Compute reconstruction error (Frobenius norm)
-double compute_reconstruction_error(const Matrix& original, const Matrix& reconstructed) {
-    if (original.rows != reconstructed.rows || original.cols != reconstructed.cols || !original.data || !reconstructed.data) {
-        std::cerr << "Dimension mismatch or invalid data in reconstruction error calculation: original ("
-                  << original.rows << "x" << original.cols << "), reconstructed ("
-                  << reconstructed.rows << "x" << reconstructed.cols << ")" << std::endl;
-        return -1.0;
-    }
-    double error = 0.0;
-    for (int i = 0; i < original.rows; ++i) {
-        for (int j = 0; j < original.cols; ++j) {
-            double diff = matrix_at(original, i, j) - matrix_at(reconstructed, i, j);
-            error += diff * diff;
+void modified_gram_schmidt(Matrix& V, int n_components) {
+    int n = V.rows;
+    for (int j = 0; j < n_components; ++j) {
+        __PROMISE__ norm = 0.0;
+        for (int i = 0; i < n; ++i) {
+            norm += V.get(i, j) * V.get(i, j);
+        }
+        norm = sqrt(norm);
+        if (norm > 1e-10) {
+            for (int i = 0; i < n; ++i) {
+                V.set(i, j, V.get(i, j) / norm);
+            }
+        }
+
+        for (int k = j + 1; k < n_components; ++k) {
+            __PROMISE__ dot = 0.0;
+            for (int i = 0; i < n; ++i) {
+                dot += V.get(i, j) * V.get(i, k);
+            }
+            for (int i = 0; i < n; ++i) {
+                V.set(i, k, V.get(i, k) - dot * V.get(i, j));
+            }
         }
     }
-    return sqrt(error);
+}
+
+NystromResult nystrom_approximation(const Matrix& A, int n_components, int sample_size) {
+    int m = A.rows, n = A.cols;
+    if (n_components > m || n_components <= 0 || sample_size > m || sample_size < n_components) {
+        throw std::runtime_error("Invalid n_components or sample_size");
+    }
+
+    Matrix AAt = compute_AAt(A);
+    double trace = 0.0;
+    for (int i = 0; i < m; ++i) {
+        trace += AAt.get(i, i);
+    }
+    __PROMISE__ reg_param = trace / m * 1e-6;
+
+    int* indices = new int[m];
+    for (int i = 0; i < m; ++i) indices[i] = i;
+
+    std::mt19937 g(42);
+    std::shuffle(indices, indices + m, g);
+    int* sampled_indices = new int[sample_size];
+    std::memcpy(sampled_indices, indices, sample_size * sizeof(int));
+
+    Matrix W(sample_size, sample_size);
+    for (int i = 0; i < sample_size; ++i) {
+        for (int j = 0; j < sample_size; ++j) {
+            W.set(i, j, AAt.get(sampled_indices[i], sampled_indices[j]));
+        }
+    }
+    for (int i = 0; i < sample_size; ++i) {
+        W.set(i, i, W.get(i, i) + reg_param);
+    }
+
+    Matrix W_eigenvectors(sample_size, sample_size);
+    __PROMISE__* W_eigenvalues = new __PROMISE__[sample_size]();
+    jacobi_eigendecomposition(W, W_eigenvectors, W_eigenvalues);
+
+    Matrix C(m, sample_size);
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < sample_size; ++j) {
+            C.set(i, j, AAt.get(i, sampled_indices[j]));
+        }
+    }
+
+    double temp8 = 1.0;
+    double temp9 = 0.0;
+    __PROMISE__ threshold = trace / m * 1e-8;
+    Matrix W_inv_sqrt(sample_size, sample_size);
+    for (int i = 0; i < sample_size; ++i) {
+        __PROMISE__ sqrt_eigenval = (W_eigenvalues[i] > threshold) ? temp8 / sqrt(W_eigenvalues[i]) : temp9;
+        for (int j = 0; j < sample_size; ++j) {
+            W_inv_sqrt.set(i, j, W_eigenvectors.get(i, j) * sqrt_eigenval);
+        }
+    }
+
+    Matrix U = matrix_multiply(C, W_inv_sqrt);
+
+    NystromResult result(m, n_components);
+    for (int i = 0; i < n_components; ++i) {
+        if (W_eigenvalues[i] < threshold) {
+            std::cerr << "Warning: Small eigenvalue at index " << i << ": " << W_eigenvalues[i] << std::endl;
+        }
+        result.eigenvalues[i] = W_eigenvalues[i] * (m / static_cast<__PROMISE__>(sample_size));
+        for (int j = 0; j < m; ++j) {
+            result.eigenvectors.set(j, i, U.get(j, i));
+        }
+    }
+
+    modified_gram_schmidt(result.eigenvectors, n_components);
+
+    Matrix U_k(m, n_components);
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n_components; ++j) {
+            U_k.set(i, j, result.eigenvectors.get(i, j));
+        }
+    }
+    Matrix U_kT(n_components, m);
+    for (int i = 0; i < n_components; ++i) {
+        for (int j = 0; j < m; ++j) {
+            U_kT.set(i, j, U_k.get(j, i));
+        }
+    }
+
+    double temp3 = 0.0;
+    Matrix Lambda_sqrt(n_components, n_components);
+    for (int i = 0; i < n_components; ++i) {
+        Lambda_sqrt.set(i, i, sqrt(max(temp3, result.eigenvalues[i])));
+    }
+
+    Matrix temp = matrix_multiply(U_k, Lambda_sqrt);
+    result.approximation = matrix_multiply(temp, U_kT);
+
+    __PROMISE__ norm_approx = 0.0;
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < m; ++j) {
+            norm_approx += result.approximation.get(i, j) * result.approximation.get(i, j);
+        }
+    }
+    norm_approx = sqrt(norm_approx);
+    std::cout << "Frobenius norm of approximation for n_components=" << n_components << ": " << norm_approx << std::endl;
+
+    Matrix U_kT_U_k = matrix_multiply(U_kT, U_k);
+    std::cout << "Orthonormality check (U_k^T * U_k):\n";
+    __PROMISE__ temp1 = 1.0, temp2 = 0.0;
+    for (int i = 0; i < n_components; ++i) {
+        for (int j = 0; j < n_components; ++j) {
+            __PROMISE__ expected = (i == j) ? temp1 : temp2;
+            if (abs(U_kT_U_k.get(i, j) - expected) > 1e-8) {
+                std::cout << "Warning: U_k not orthonormal at (" << i << "," << j << "): " << U_kT_U_k.get(i, j) << std::endl;
+            }
+        }
+    }
+
+    result.reconstruction_error = 0.0;
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < m; ++j) {
+            __PROMISE__ diff = AAt.get(i, j) - result.approximation.get(i, j);
+            result.reconstruction_error += diff * diff;
+        }
+    }
+    result.reconstruction_error = sqrt(result.reconstruction_error);
+
+    __PROMISE__ norm_AAt = sqrt(trace);
+    __PROMISE__ norm_AAt_approx = 0.0;
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < m; ++j) {
+            norm_AAt_approx += result.approximation.get(i, j) * result.approximation.get(i, j);
+        }
+    }
+    norm_AAt_approx = sqrt(norm_AAt_approx);
+    std::cout << "Frobenius norm of AAt: " << norm_AAt << ", AAt_approx: " << norm_AAt_approx << std::endl;
+
+    Matrix full_AAt = compute_AAt(A);
+    Matrix full_eigenvectors(m, m);
+    __PROMISE__* full_eigenvalues = new __PROMISE__[m]();
+    jacobi_eigendecomposition(full_AAt, full_eigenvectors, full_eigenvalues);
+    __PROMISE__ total_variance = 0.0;
+    __PROMISE__ temp4 = 0.0;
+
+    for (int i = 0; i < m; ++i) {
+        total_variance += max(temp4, full_eigenvalues[i]);
+    }
+    __PROMISE__ explained_variance = 0.0;
+    
+    for (int i = 0; i < n_components; ++i) {
+        explained_variance += max(temp4, result.eigenvalues[i]);
+    }
+
+    delete[] indices;
+    delete[] sampled_indices;
+    delete[] W_eigenvalues;
+    delete[] full_eigenvalues;
+
+    return result;
 }
 
 
-
-int main() {
+int main(int argc, char* argv[]) {
     try {
-        int n_samples = 9999;
-        int n_features = 20;
-        int n_components = std::min(10, n_features);
-        double sparsity = 1;
+        std::string input_file = "diabetes_features.csv";
+        std::string output_file = "nystrom_results.csv";
+        int n_components = 5;
+        bool standardize = false;
+        __PROMISE__ sample_ratio = 0.8;
 
-        DataPoint* raw_data = generate_random_data(n_samples, n_features, sparsity);
-        if (!raw_data) {
-            std::cerr << "Error: Data generation failed" << std::endl;
-            return 1;
-        }
-        DataPoint* data = scale_features(raw_data, n_samples, n_features);
-        if (!data) {
-            std::cerr << "Error: Feature scaling failed" << std::endl;
-            free_data(raw_data, n_samples);
-            return 1;
+        Matrix X = read_csv(input_file);
+
+        int sample_size = max(n_components, static_cast<int>(X.rows * sample_ratio));
+        if (sample_size > X.rows) {
+            sample_size = X.rows;
         }
 
-        Matrix X = data_to_matrix(data, n_samples, n_features);
-        if (!X.data) {
-            std::cerr << "Error: Failed to create input matrix" << std::endl;
-            free_data(raw_data, n_samples);
-            free_data(data, n_samples);
-            return 1;
-        }
+        preprocess_data(X, standardize);
+        std::cout << "Data preprocessed with standardization: " << (standardize ? "true" : "false") << std::endl;
 
-        Nystrom nystrom(n_components);
+        auto start = std::chrono::high_resolution_clock::now();
+        NystromResult result = nystrom_approximation(X, n_components, sample_size);
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-        nystrom.fit(X);
-        Matrix X_reduced = nystrom.transform(X);
-        if (!X_reduced.data) {
-            std::cerr << "Error: Transform failed" << std::endl;
-            free_data(raw_data, n_samples);
-            free_data(data, n_samples);
-            free_matrix(X);
-            return 1;
-        }
-        Matrix X_reconstructed = nystrom.reconstruct(X);
-        if (!X_reconstructed.data) {
-            std::cerr << "Error: Reconstruction failed" << std::endl;
-            free_data(raw_data, n_samples);
-            free_data(data, n_samples);
-            free_matrix(X);
-            free_matrix(X_reduced);
-            return 1;
-        }
+        std::cout << "Nyström approximation completed in " << duration.count() << " ms\n";
+        std::cout << "Number of components: " << n_components << "\n";
+        std::cout << "Sample size: " << sample_size << "\n";
+        std::cout << "Reconstruction error: " << result.reconstruction_error << "\n";
+        __PROMISE__ error = result.reconstruction_error;
 
-        double recon_error = compute_reconstruction_error(X, X_reconstructed);
-        std::cout << "Reconstruction Error (Frobenius norm): " << recon_error << std::endl;
+        PROMISE_CHECK_VAR(error);
 
-        int check_len = X_reduced.rows * X_reduced.cols;
-        double check_x[check_len]; // add for check
-        for (int i=0; i< check_len; i++){
-            check_x[i]= X_reduced.data[i];
-        }
-        // PROMISE_CHECK_VAR(recon_error);
-        PROMISE_CHECK_ARRAY(check_x, check_len);
-    
-    
-        free_data(raw_data, n_samples);
-        free_data(data, n_samples);
-        free_matrix(X);
-        free_matrix(X_reduced);
-        free_matrix(X_reconstructed);
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
+
     return 0;
 }

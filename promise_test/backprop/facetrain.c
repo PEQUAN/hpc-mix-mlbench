@@ -21,9 +21,11 @@ void backprop_face() {
     printf("Starting training kernel\n");
     bpnn_train_kernel(net, &out_err, &hid_err);
     
-    
+    char filename[] = "output.dat";
+
+
     if (getenv("OUTPUT")) {
-        bpnn_save(net, "output.dat");
+        bpnn_save(net, filename);
     }
 
     bpnn_free(net);

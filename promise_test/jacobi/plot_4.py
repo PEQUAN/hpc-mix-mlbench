@@ -40,7 +40,7 @@ def run_experiments(method, digits):
             else:
                 print(f"Warning: No valid result for {digit} digits")
                 precision_settings.append({})
-                runtimes.append(elapsed_time)
+                runtimes.append(0)
         except Exception as e:
             print(f"Error running experiment for {digit} digits: {e}, Runtime: {elapsed_time:.4f} seconds")
             precision_settings.append({})

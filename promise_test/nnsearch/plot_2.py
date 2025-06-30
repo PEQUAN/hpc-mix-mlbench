@@ -7,12 +7,12 @@ import csv
 from cadnaPromise.run import runPromise
 
 CATEGORY_DISPLAY_NAMES = {
-    'double': 'Double Precision',
-    'float': 'Single Precision',
-    'half_float::half': 'fp16',
-    'flx::floatx<8, 7>': 'bf16',
-    'flx::floatx<4, 3>': 'e4m3',
-    'flx::floatx<5, 2>': 'e5m2'
+    'double': 'FP64',
+    'float': 'FP32',
+    'half_float::half': 'FP16',
+    'flx::floatx<8, 7>': 'BF16',
+    'flx::floatx<4, 3>': 'E4M3',
+    'flx::floatx<5, 2>': 'E5M2'
 }
 
 def run_experiments(method, digits):
@@ -40,12 +40,11 @@ def run_experiments(method, digits):
             else:
                 print(f"Warning: No valid result for {digit} digits")
                 precision_settings.append({})
-                runtimes.append(elapsed_time)
+                runtimes.append(0)
         except Exception as e:
-            elapsed_time = time.time() - start_time
             print(f"Error running experiment for {digit} digits: {e}, Runtime: {elapsed_time:.4f} seconds")
             precision_settings.append({})
-            runtimes.append(elapsed_time)
+            runtimes.append(0.0)  # Append 0.0 for failed runs to maintain alignment
     return precision_settings, runtimes
 
 def save_precision_settings(precision_settings, filename='precision_settings_2.json'):
@@ -105,6 +104,36 @@ def load_precision_settings(filename='precision_settings_2.json'):
         save_precision_settings(precision_settings, filename)
         return precision_settings
 
+def load_runtimes(filename='runtimes2.csv'):
+    """Load runtimes from a CSV file."""
+    if not os.path.exists(filename):
+        print(f"Error: {filename} does not exist, regenerating data...")
+        digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        precision_settings, runtimes = run_experiments('bhsd', digits)
+        save_runtimes_to_csv(digits, runtimes, filename)
+        return runtimes
+    try:
+        runtimes = []
+        with open(filename, 'r') as f:
+            reader = csv.reader(f)
+            header = next(reader)  
+            if header != ['Digit', 'Runtime (seconds)']:
+                raise ValueError("Invalid CSV header")
+            for row in reader:
+                if row[0] == 'Average':
+                    continue  
+                if len(row) != 2:
+                    raise ValueError(f"Invalid row format: {row}")
+                runtimes.append(float(row[1]))
+        return runtimes
+    except Exception as e:
+        print(f"Error loading runtimes: {e}")
+        print("Regenerating data due to loading error...")
+        digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        precision_settings, runtimes = run_experiments('bhsd', digits)
+        save_runtimes_to_csv(digits, runtimes, filename)
+        return runtimes
+
 def get_categories(precision_settings):
     """Extract unique categories from precision settings, with fallback."""
     categories = set()
@@ -113,10 +142,16 @@ def get_categories(precision_settings):
             categories.update(setting.keys())
     return list(categories) if categories else list(CATEGORY_DISPLAY_NAMES.keys())
 
-def plot_precision_settings(precision_settings, digits):
-    """Visualize precision settings as a stacked bar chart with observation counts."""
+def plot_precision_settings(precision_settings, digits, runtimes):
+    """Visualize precision settings as a stacked bar chart with observation counts and runtime as a line plot."""
     if not precision_settings:
         print("Error: No precision settings to plot")
+        return
+    if len(runtimes) != len(digits):
+        print(f"Error: Runtime length ({len(runtimes)}) does not match digits length ({len(digits)})")
+        return
+    if len(precision_settings) != len(digits):
+        print(f"Error: Precision settings length ({len(precision_settings)}) does not match digits length ({len(digits)})")
         return
     
     categories = get_categories(precision_settings)
@@ -143,6 +178,10 @@ def plot_precision_settings(precision_settings, digits):
     
     active_categories = sorted(active_categories, key=lambda x: desired_order.index(x) if x in desired_order else len(desired_order))
     
+    print("Digits:", digits)
+    print("Runtimes:", runtimes)
+    print("Precision settings heights:", {cat: heights[cat] for cat in active_categories})
+    
     available_styles = plt.style.available
     preferred_style = 'seaborn' if 'seaborn' in available_styles else 'seaborn-v0_8' if 'seaborn-v0_8' in available_styles else 'ggplot'
     try:
@@ -152,8 +191,10 @@ def plot_precision_settings(precision_settings, digits):
         print(f"Warning: Could not use style '{preferred_style}', falling back to 'default'. Error: {e}")
         plt.style.use('default')
 
-    fig, ax = plt.subplots(figsize=(10, 7))
-
+    fig, ax = plt.subplots(figsize=(11, 8))
+    
+    ax2 = ax.twinx()
+    
     colors = plt.cm.Set2(np.linspace(0, 1, len(categories)))
 
     x_indices = np.arange(len(digits))
@@ -162,7 +203,7 @@ def plot_precision_settings(precision_settings, digits):
     for i, category in enumerate(active_categories):
         display_name = CATEGORY_DISPLAY_NAMES.get(category, category)
         bars = ax.bar(x_indices, heights[category], bottom=bottom, label=display_name,
-                      color=colors[i], width=1.86/len(active_categories), edgecolor='white')
+                      color=colors[i], width=0.6, edgecolor='white')
         
         for j, (bar_height, bottom_height) in enumerate(zip(heights[category], bottom)):
             if bar_height > 0:
@@ -172,29 +213,42 @@ def plot_precision_settings(precision_settings, digits):
                     f'{int(bar_height)}',
                     ha='center',
                     va='center',
-                    fontsize=14,
+                    fontsize=15,
                     weight='bold',
                     color='black'
                 )
         bottom += np.array(heights[category])
 
+    try:
+        ax2.plot(x_indices, runtimes, color='red', marker='o', linestyle='-', linewidth=2, markersize=8, label='Runtime', zorder=10)
+    except Exception as e:
+        print(f"Error plotting runtime line: {e}")
+        return
+
+    ax.set_ylim(0, max(np.sum([heights[cat] for cat in active_categories], axis=0)) * 1)
+    ax2.set_ylim(0, max(runtimes) * 1.5 if runtimes else 1.0)  # Adjust for visibility
+    
     ax.set_xticks(x_indices)
     ax.set_xticklabels(digits)
 
     ax.set_xlim(-0.5, len(digits) - 0.5)
 
-    ax.set_xlabel('Number of Digits', fontsize=16, weight='bold')
-    ax.set_ylabel('Count of Values', fontsize=16, weight='bold')
-    ax.set_title('Precision Settings Distribution', fontsize=16, weight='bold', pad=20)
+    ax.set_xlabel('Number of required digits', fontsize=16, weight='bold')
+    ax.set_ylabel('Number of variables of each type', fontsize=16, weight='bold')
+    ax2.set_ylabel('Runtime (seconds)', fontsize=16, weight='bold', color='red')
+    ax2.tick_params(axis='y', labelcolor='red')
+    ax.set_title('Precision Settings Distribution with Runtime', fontsize=16, weight='bold', pad=20)
     ax.grid(True, axis='y', linestyle='--', alpha=0.7)
     
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), ncol=min(len(active_categories), 6),
-              fontsize=16, frameon=True, edgecolor='black')
+    lines, labels = ax.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax.legend(lines + lines2, labels + labels2, loc='upper center', bbox_to_anchor=(0.5, 1.15),
+              ncol=min(len(active_categories) + 1, 6), fontsize=15, frameon=True, edgecolor='black')
 
-    plt.tick_params(axis='both', which='major', labelsize=16)
+    plt.tick_params(axis='both', which='major', labelsize=15)
     plt.tight_layout()
-    plt.savefig('precision2.png', bbox_inches='tight', dpi=300, transparent=False)
-    print("Plot saved as precision2.png")
+    plt.savefig('precision2_with_runtime.png', bbox_inches='tight', dpi=300, transparent=False)
+    print("Plot saved as precision2_with_runtime.png")
     plt.show()
 
 if __name__ == "__main__":
@@ -204,6 +258,13 @@ if __name__ == "__main__":
     precision_settings, runtimes = run_experiments(method, digits)
     save_precision_settings(precision_settings)
     save_runtimes_to_csv(digits, runtimes)
-
+    
     loaded_settings = load_precision_settings()
-    plot_precision_settings(loaded_settings, digits)
+    loaded_runtimes = load_runtimes()
+
+    if len(loaded_settings) != len(digits):
+        print(f"Error: Loaded precision settings length ({len(loaded_settings)}) does not match digits ({len(digits)})")
+    elif len(loaded_runtimes) != len(digits):
+        print(f"Error: Loaded runtimes length ({len(loaded_runtimes)}) does not match digits ({len(digits)})")
+    else:
+        plot_precision_settings(loaded_settings, digits, loaded_runtimes)

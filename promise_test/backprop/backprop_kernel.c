@@ -60,6 +60,11 @@ void bpnn_train_kernel(BPNN *net, __PR_6__ *eo, __PR_6__ *eh) {
                         net->hidden_weights, net->hidden_prev_weights);
     bpnn_adjust_weights(net->hidden_delta, hid, net->input_units, in,
                         net->input_weights, net->input_prev_weights);
+    
+    double output_delta_check[net->output_n + 1];
+    for (int i = 0; i <= net->output_n; i++) {
+        output_delta_check[i] = net->output_delta[i];
+    }
 
-    PROMISE_CHECK_VAR(net->hidden_weights[0][0]);
+    PROMISE_CHECK_ARRAY(output_delta_check, net->output_n + 1);
 }

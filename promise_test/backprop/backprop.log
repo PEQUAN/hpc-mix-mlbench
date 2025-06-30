@@ -1,12 +1,5 @@
-06/04 21:28:38: 🤘 cadnaPromise 🤘
-06/04 21:28:38: Using the compiler: g++
-06/04 21:28:38: We are working with 5 files and 16 different types
-06/04 21:28:38: The expectation is 180 digits.
-06/04 21:28:38: a) Get a reference result with cadna (double)
-06/04 21:28:47: b) Check with highest format (Double)
-06/04 21:28:50: c) Delta-Debug Single/Double
-06/04 21:30:11: d) Delta-Debug Half/Single
-06/04 21:31:10: The final result contains 6x double and 10x float.
-06/04 21:31:10: It tooks 152.56s
-06/04 21:31:10: 👉 60 compilations (51 failed) for 145.96s
-06/04 21:31:10: 👉 9 executions   (0 failed) for 1.11s
+06/30 22:43:40: 🤘 cadnaPromise 🤘
+06/30 22:43:40: Using the compiler: g++
+06/30 22:43:40: We are working with 5 files and 16 different types
+06/30 22:43:40: The expectation is 2 digits.
+06/30 22:43:40: a) Get a reference result with cadna (double)
