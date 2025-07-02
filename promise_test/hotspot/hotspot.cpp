@@ -1,133 +1,98 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <stdexcept>
+#include <chrono>
+#include <array>
+#include <algorithm>
+
+namespace {
+    int BLOCK_SIZE = 16;
+    int BLOCK_SIZE_C = BLOCK_SIZE;
+    int BLOCK_SIZE_R = BLOCK_SIZE;
+
+    double MAX_PD = 3.0e6;
+    double PRECISION = 0.001;
+    double SPEC_HEAT_SI = 1.75e6;
+    double K_SI = 100.0;
+    double FACTOR_CHIP = 0.5;
+
+    double t_chip = 0.0005;
+    double chip_height = 0.016;
+    double chip_width = 0.016;
+    double amb_temp = 80.0;
+}
 
 // Returns the current system time in microseconds
 long long get_time() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (tv.tv_sec * 1000000) + tv.tv_usec;
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-using namespace std;
-
-#define BLOCK_SIZE 16
-#define BLOCK_SIZE_C BLOCK_SIZE
-#define BLOCK_SIZE_R BLOCK_SIZE
-
-#define STR_SIZE 256
-
-/* maximum power density possible (say 300W for a 10mm x 10mm chip) */
-#define MAX_PD (3.0e6)
-/* required precision in degrees    */
-#define PRECISION 0.001
-#define SPEC_HEAT_SI 1.75e6
-#define K_SI 100
-/* capacitance fitting factor   */
-#define FACTOR_CHIP 0.5
-#define OPEN
-//#define NUM_THREAD 4
-
-/* chip parameters  */
-const __PROMISE__ t_chip = 0.0005;
-const __PROMISE__ chip_height = 0.016;
-const __PROMISE__ chip_width = 0.016;
-
-/* ambient temperature, assuming no package at all  */
-const __PROMISE__ amb_temp = 80.0;
-
-int num_omp_threads;
-
-/* Single iteration of the transient solver in the grid model.
- * advances the solution of the discretized difference equations
- * by one time step
- */
-void single_iteration(__PROMISE__ *result, __PROMISE__ *temp, __PROMISE__ *power, int row,
-                      int col, __PROMISE__ Cap_1, __PROMISE__ Rx_1, __PROMISE__ Ry_1, __PROMISE__ Rz_1,
-                      __PROMISE__ step) {
+void single_iteration(__PROMISE__* result, const __PROMISE__* temp, 
+                     const __PROMISE__* power, int row, int col,
+                     __PROMISE__ Cap_1, __PROMISE__ Rx_1, __PROMISE__ Ry_1, __PROMISE__ Rz_1, __PROMISE__ step) {
     __PROMISE__ delta;
-    int r, c;
-    int chunk;
     int num_chunk = row * col / (BLOCK_SIZE_R * BLOCK_SIZE_C);
     int chunks_in_row = col / BLOCK_SIZE_C;
     int chunks_in_col = row / BLOCK_SIZE_R;
 
-    for (chunk = 0; chunk < num_chunk; ++chunk) {
+    for (int chunk = 0; chunk < num_chunk; ++chunk) {
         int r_start = BLOCK_SIZE_R * (chunk / chunks_in_col);
         int c_start = BLOCK_SIZE_C * (chunk % chunks_in_row);
-        int r_end = r_start + BLOCK_SIZE_R > row ? row : r_start + BLOCK_SIZE_R;
-        int c_end = c_start + BLOCK_SIZE_C > col ? col : c_start + BLOCK_SIZE_C;
+        int r_end = std::min(r_start + BLOCK_SIZE_R, row);
+        int c_end = std::min(c_start + BLOCK_SIZE_C, col);
 
         if (r_start == 0 || c_start == 0 || r_end == row || c_end == col) {
-            for (r = r_start; r < r_start + BLOCK_SIZE_R; ++r) {
-                for (c = c_start; c < c_start + BLOCK_SIZE_C; ++c) {
-                    /* Corner 1 */
-                    if ((r == 0) && (c == 0)) {
-                        delta =
-                            (Cap_1) * (power[0] + (temp[1] - temp[0]) * Rx_1 +
-                                       (temp[col] - temp[0]) * Ry_1 +
-                                       (amb_temp - temp[0]) * Rz_1);
-                    } /* Corner 2 */
-                    else if ((r == 0) && (c == col - 1)) {
-                        delta = (Cap_1) *
-                                (power[c] + (temp[c - 1] - temp[c]) * Rx_1 +
-                                 (temp[c + col] - temp[c]) * Ry_1 +
-                                 (amb_temp - temp[c]) * Rz_1);
-                    } /* Corner 3 */
-                    else if ((r == row - 1) && (c == col - 1)) {
-                        delta = (Cap_1) *
-                                (power[r * col + c] +
-                                 (temp[r * col + c - 1] - temp[r * col + c]) *
-                                     Rx_1 +
-                                 (temp[(r - 1) * col + c] - temp[r * col + c]) *
-                                     Ry_1 +
-                                 (amb_temp - temp[r * col + c]) * Rz_1);
-                    } /* Corner 4 */
-                    else if ((r == row - 1) && (c == 0)) {
-                        delta = (Cap_1) *
-                                (power[r * col] +
-                                 (temp[r * col + 1] - temp[r * col]) * Rx_1 +
-                                 (temp[(r - 1) * col] - temp[r * col]) * Ry_1 +
-                                 (amb_temp - temp[r * col]) * Rz_1);
-                    } /* Edge 1 */
+            for (int r = r_start; r < r_end; ++r) {
+                for (int c = c_start; c < c_end; ++c) {
+                    if (r == 0 && c == 0) {
+                        delta = Cap_1 * (power[0] +
+                            (temp[1] - temp[0]) * Rx_1 +
+                            (temp[col] - temp[0]) * Ry_1 +
+                            (amb_temp - temp[0]) * Rz_1);
+                    }
+                    else if (r == 0 && c == col - 1) {
+                        delta = Cap_1 * (power[c] +
+                            (temp[c - 1] - temp[c]) * Rx_1 +
+                            (temp[c + col] - temp[c]) * Ry_1 +
+                            (amb_temp - temp[c]) * Rz_1);
+                    }
+                    else if (r == row - 1 && c == col - 1) {
+                        delta = Cap_1 * (power[r * col + c] +
+                            (temp[r * col + c - 1] - temp[r * col + c]) * Rx_1 +
+                            (temp[(r - 1) * col + c] - temp[r * col + c]) * Ry_1 +
+                            (amb_temp - temp[r * col + c]) * Rz_1);
+                    }
+                    else if (r == row - 1 && c == 0) {
+                        delta = Cap_1 * (power[r * col] +
+                            (temp[r * col + 1] - temp[r * col]) * Rx_1 +
+                            (temp[(r - 1) * col] - temp[r * col]) * Ry_1 +
+                            (amb_temp - temp[r * col]) * Rz_1);
+                    }
                     else if (r == 0) {
-                        delta = (Cap_1) *
-                                (power[c] +
-                                 (temp[c + 1] + temp[c - 1] - 2.0 * temp[c]) *
-                                     Rx_1 +
-                                 (temp[col + c] - temp[c]) * Ry_1 +
-                                 (amb_temp - temp[c]) * Rz_1);
-                    } /* Edge 2 */
+                        delta = Cap_1 * (power[c] +
+                            (temp[c + 1] + temp[c - 1] - 2.0 * temp[c]) * Rx_1 +
+                            (temp[col + c] - temp[c]) * Ry_1 +
+                            (amb_temp - temp[c]) * Rz_1);
+                    }
                     else if (c == col - 1) {
-                        delta = (Cap_1) *
-                                (power[r * col + c] +
-                                 (temp[(r + 1) * col + c] +
-                                  temp[(r - 1) * col + c] -
-                                  2.0 * temp[r * col + c]) *
-                                     Ry_1 +
-                                 (temp[r * col + c - 1] - temp[r * col + c]) *
-                                     Rx_1 +
-                                 (amb_temp - temp[r * col + c]) * Rz_1);
-                    } /* Edge 3 */
+                        delta = Cap_1 * (power[r * col + c] +
+                            (temp[(r + 1) * col + c] + temp[(r - 1) * col + c] - 2.0 * temp[r * col + c]) * Ry_1 +
+                            (temp[r * col + c - 1] - temp[r * col + c]) * Rx_1 +
+                            (amb_temp - temp[r * col + c]) * Rz_1);
+                    }
                     else if (r == row - 1) {
-                        delta =
-                            (Cap_1) *
-                            (power[r * col + c] +
-                             (temp[r * col + c + 1] + temp[r * col + c - 1] -
-                              2.0 * temp[r * col + c]) *
-                                 Rx_1 +
-                             (temp[(r - 1) * col + c] - temp[r * col + c]) *
-                                 Ry_1 +
-                             (amb_temp - temp[r * col + c]) * Rz_1);
-                    } /* Edge 4 */
+                        delta = Cap_1 * (power[r * col + c] +
+                            (temp[r * col + c + 1] + temp[r * col + c - 1] - 2.0 * temp[r * col + c]) * Rx_1 +
+                            (temp[(r - 1) * col + c] - temp[r * col + c]) * Ry_1 +
+                            (amb_temp - temp[r * col + c]) * Rz_1);
+                    }
                     else if (c == 0) {
-                        delta = (Cap_1) *
-                                (power[r * col] +
-                                 (temp[(r + 1) * col] + temp[(r - 1) * col] -
-                                  2.0 * temp[r * col]) *
-                                     Ry_1 +
-                                 (temp[r * col + 1] - temp[r * col]) * Rx_1 +
-                                 (amb_temp - temp[r * col]) * Rz_1);
+                        delta = Cap_1 * (power[r * col] +
+                            (temp[(r + 1) * col] + temp[(r - 1) * col] - 2.0 * temp[r * col]) * Ry_1 +
+                            (temp[r * col + 1] - temp[r * col]) * Rx_1 +
+                            (amb_temp - temp[r * col]) * Rz_1);
                     }
                     result[r * col + c] = temp[r * col + c] + delta;
                 }
@@ -135,35 +100,21 @@ void single_iteration(__PROMISE__ *result, __PROMISE__ *temp, __PROMISE__ *power
             continue;
         }
 
-        for (r = r_start; r < r_start + BLOCK_SIZE_R; ++r) {
-            for (c = c_start; c < c_start + BLOCK_SIZE_C; ++c) {
-                /* Update Temperatures */
-                result[r * col + c] =
-                    temp[r * col + c] +
-                    (Cap_1 *
-                     (power[r * col + c] +
-                      (temp[(r + 1) * col + c] + temp[(r - 1) * col + c] -
-                       2.f * temp[r * col + c]) *
-                          Ry_1 +
-                      (temp[r * col + c + 1] + temp[r * col + c - 1] -
-                       2.f * temp[r * col + c]) *
-                          Rx_1 +
-                      (amb_temp - temp[r * col + c]) * Rz_1));
+        for (int r = r_start; r < r_end; ++r) {
+            for (int c = c_start; c < c_end; ++c) {
+                result[r * col + c] = temp[r * col + c] +
+                    (Cap_1 * (power[r * col + c] +
+                    (temp[(r + 1) * col + c] + temp[(r - 1) * col + c] - 2.0 * temp[r * col + c]) * Ry_1 +
+                    (temp[r * col + c + 1] + temp[r * col + c - 1] - 2.0 * temp[r * col + c]) * Rx_1 +
+                    (amb_temp - temp[r * col + c]) * Rz_1));
             }
         }
     }
 }
 
-/* Transient solver driver routine: simply converts the heat
- * transfer differential equations to difference equations
- * and solves the difference equations by iterating
- */
-void compute_tran_temp(__PROMISE__ *result, int num_iterations, __PROMISE__ *temp,
-                       __PROMISE__ *power, int row, int col) {
-#ifdef VERBOSE
-    int i = 0;
-#endif
-
+void compute_tran_temp(__PROMISE__* result, int num_iterations, 
+                      __PROMISE__* temp, const __PROMISE__* power, 
+                      int row, int col) {
     __PROMISE__ grid_height = chip_height / row;
     __PROMISE__ grid_width = chip_width / col;
 
@@ -175,118 +126,119 @@ void compute_tran_temp(__PROMISE__ *result, int num_iterations, __PROMISE__ *tem
     __PROMISE__ max_slope = MAX_PD / (FACTOR_CHIP * t_chip * SPEC_HEAT_SI);
     __PROMISE__ step = PRECISION / max_slope / 1000.0;
 
-    __PROMISE__ Rx_1 = 1.f / Rx;
-    __PROMISE__ Ry_1 = 1.f / Ry;
-    __PROMISE__ Rz_1 = 1.f / Rz;
+    __PROMISE__ Rx_1 = 1.0 / Rx;
+    __PROMISE__ Ry_1 = 1.0 / Ry;
+    __PROMISE__ Rz_1 = 1.0 / Rz;
     __PROMISE__ Cap_1 = step / Cap;
-#ifdef VERBOSE
-    fprintf(stdout, "total iterations: %d s\tstep size: %g s\n", num_iterations,
-            step);
-    fprintf(stdout, "Rx: %g\tRy: %g\tRz: %g\tCap: %g\n", Rx, Ry, Rz, Cap);
-#endif
 
-    {
-        __PROMISE__ *r = result;
-        __PROMISE__ *t = temp;
-        for (int i = 0; i < num_iterations; i++) {
-#ifdef VERBOSE
-            fprintf(stdout, "iteration %d\n", i++);
-#endif
-            single_iteration(r, t, power, row, col, Cap_1, Rx_1, Ry_1, Rz_1,
-                             step);
-            __PROMISE__ *tmp = t;
-            t = r;
-            r = tmp;
+    for (int i = 0; i < num_iterations; ++i) {
+        single_iteration(result, temp, power, row, col, Cap_1, Rx_1, Ry_1, Rz_1, step);
+        std::swap(temp, result);
+    }
+}
+
+void write_output(const __PROMISE__* vect, int grid_rows, int grid_cols, const std::string& file) {
+    std::ofstream fp(file);
+    if (!fp.is_open()) {
+        throw std::runtime_error("Unable to open output file");
+    }
+
+    int index = 0;
+    for (int i = 0; i < grid_rows; ++i) {
+        for (int j = 0; j < grid_cols; ++j) {
+            fp << index << "\t" << vect[i * grid_cols + j] << "\n";
+            ++index;
         }
     }
-#ifdef VERBOSE
-    fprintf(stdout, "iteration %d\n", i++);
-#endif
 }
 
-void fatal(const char *s) {
-    fprintf(stderr, "error: %s\n", s);
-    exit(1);
+void read_input(double* vect, int grid_rows, int grid_cols, const std::string& file) {
+    std::ifstream fp(file);
+    if (!fp.is_open()) {
+        throw std::runtime_error("Unable to open input file");
+    }
+
+    std::string line;
+    for (int i = 0; i < grid_rows * grid_cols; ++i) {
+        if (!std::getline(fp, line)) {
+            throw std::runtime_error("Not enough lines in file");
+        }
+        try {
+            vect[i] = std::stod(line);
+        } catch (const std::exception& e) {
+            throw std::runtime_error("Invalid file format");
+        }
+    }
 }
 
-void writeoutput(__PROMISE__ *vect, int grid_rows, int grid_cols, char *file) {
-    int i, j, index = 0;
-    FILE *fp;
-    char str[STR_SIZE];
+void usage(const std::string& program) {
+    std::cerr << "Usage: " << program 
+              << " <grid_rows> <grid_cols> <sim_time> <temp_file> <power_file> <output_file>\n"
+              << "\t<grid_rows>  - number of rows in the grid (positive integer)\n"
+              << "\t<grid_cols>  - number of columns in the grid (positive integer)\n"
+              << "\t<sim_time>   - number of iterations\n"
+              << "\t<temp_file>  - name of the file containing the initial temperature values of each cell\n"
+              << "\t<power_file> - name of the file containing the dissipated power values of each cell\n"
+              << "\t<output_file> - name of the output file\n";
+    std::exit(1);
+}
 
-    if ((fp = fopen(file, "w")) == 0)
-        printf("The file was not opened\n");
-
-    for (i = 0; i < grid_rows; i++)
-        for (j = 0; j < grid_cols; j++) {
-            sprintf(str, "%d\t%g\n", index, vect[i * grid_cols + j]);
-            fputs(str, fp);
-            index++;
+int main(int argc, char* argv[]) {
+    __PROMISE__* temp = nullptr;
+    __PROMISE__* power = nullptr;
+    __PROMISE__* result = nullptr;
+    
+    try {
+        if (argc != 7) {
+            usage(argv[0]);
         }
 
-    fclose(fp);
-}
+        int grid_rows = std::stoi(argv[1]);
+        int grid_cols = std::stoi(argv[2]);
+        int sim_time = std::stoi(argv[3]);
+        
+        if (grid_rows <= 0 || grid_cols <= 0 || sim_time <= 0) {
+            usage(argv[0]);
+        }
 
-void read_input(__PROMISE__ *vect, int grid_rows, int grid_cols, char *file) {
-    int i, index;
-    FILE *fp;
-    char str[STR_SIZE];
-    __PROMISE__ val;
+        size_t size = static_cast<size_t>(grid_rows) * grid_cols;
+        
+        temp = new __PROMISE__[size]();
+        power = new __PROMISE__[size]();
+        result = new __PROMISE__[size]();
 
-    fp = fopen(file, "r");
-    if (!fp)
-        fatal("file could not be opened for reading");
+        std::string tfile = argv[4];
+        std::string pfile = argv[5];
+        std::string ofile = argv[6];
 
-    for (i = 0; i < grid_rows * grid_cols; i++) {
-        fgets(str, STR_SIZE, fp);
-        vect[i] = val;
+        read_input(temp, grid_rows, grid_cols, tfile);
+        read_input(power, grid_rows, grid_cols, pfile);
+
+        std::cout << "Start computing the transient temperature\n";
+        
+        auto start_time = get_time();
+        compute_tran_temp(result, sim_time, temp, power, grid_rows, grid_cols);
+        auto end_time = get_time();
+
+        std::cout << "Ending simulation\n";
+        std::cout << "Total time: " << ((end_time - start_time) / 1000000.0) << " seconds\n";
+
+        write_output((sim_time & 1) ? result : temp, grid_rows, grid_cols, ofile);
+
+        PROMISE_CHECK_ARRAY(temp, grid_rows * grid_cols);
+
+        delete[] temp;
+        delete[] power;
+        delete[] result;
+        
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << "\n";
+        delete[] temp;
+        delete[] power;
+        delete[] result;
+        return 1;
     }
-
-    fclose(fp);
 }
 
 
-int main(int argc, char **argv) {
-    int grid_rows, grid_cols, sim_time, i;
-    __PROMISE__ *temp, *power, *result;
-    char *tfile, *pfile, *ofile;
-
-
-    /* allocate memory for the temperature and power arrays */
-    temp = (__PR_1__ *)calloc(grid_rows * grid_cols, sizeof(__PR_1__));
-    power = (__PR_2__ *)calloc(grid_rows * grid_cols, sizeof(__PR_2__));
-    result = (__PR_3__ *)calloc(grid_rows * grid_cols, sizeof(__PR_3__));
-    if (!temp || !power)
-        fatal("unable to allocate memory");
-
-    /* read initial temperatures and input power    */
-    tfile = argv[5];
-    pfile = argv[6];
-    ofile = argv[7];
-
-    read_input(temp, grid_rows, grid_cols, tfile);
-    read_input(power, grid_rows, grid_cols, pfile);
-
-    printf("Start computing the transient temperature\n");
-    long long start_time = get_time();
-    compute_tran_temp(result, sim_time, temp, power, grid_rows, grid_cols);
-
-    long long end_time = get_time();
-
-    printf("Ending simulation\n");
-
-    /* output results   */
-    if (getenv("OUTPUT")) {
-        FILE *file = fopen("output.txt", "w+");
-        for (i = 0; i < grid_rows * grid_cols; i++)
-            fprintf(file, "%d\t%g\n", i, temp[i]);
-        fclose(file);
-    }
-
-    PROMISE_CHECK_ARRAY(temp, grid_rows * grid_cols);
-    /* cleanup  */
-    free(temp);
-    free(power);
-
-    return 0;
-}

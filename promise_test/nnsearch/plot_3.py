@@ -15,14 +15,13 @@ CATEGORY_DISPLAY_NAMES = {
     'flx::floatx<5, 2>': 'E5M2'
 }
 
-# Fixed color mapping for consistent category colors
 CATEGORY_COLORS = {
-    'double': '#1b9e77',  # Green
-    'float': '#d95f02',   # Orange
-    'half_float::half': '#7570b3',  # Purple
-    'flx::floatx<8, 7>': '#e7298a',  # Pink
-    'flx::floatx<4, 3>': '#66a61e',  # Lime
-    'flx::floatx<5, 2>': '#e6ab02'   # Yellow
+    'double': '#81D4FAB3',         # Sky Pop Blue
+    'float': '#FFAB91B3',          # Candy Coral
+    'half_float::half': '#BA68C8B3', # Bubblegum Purple
+    'flx::floatx<8, 7>': '#F06292B3', # Strawberry Pink
+    'flx::floatx<4, 3>': '#AED581B3', # Apple Green
+    'flx::floatx<5, 2>': '#FFF176B3', # Pineapple Yellow
 }
 
 def run_experiments(method, digits):
@@ -167,8 +166,8 @@ def plot_precision_settings(precision_settings, digits, runtimes):
     categories = get_categories(precision_settings)
     
     desired_order = [
-        'flx::floatx<5, 2>',
         'flx::floatx<4, 3>',
+        'flx::floatx<5, 2>',
         'flx::floatx<8, 7>',
         'half_float::half',
         'float',
@@ -208,12 +207,17 @@ def plot_precision_settings(precision_settings, digits, runtimes):
     x_indices = np.arange(len(digits))
 
     bottom = np.zeros(len(digits))
+    # Store bar handles for legend
+    bar_handles = []
+    bar_labels = []
     for category in active_categories:
         display_name = CATEGORY_DISPLAY_NAMES.get(category, category)
         # Use fixed color from CATEGORY_COLORS, fallback to gray if category not in mapping
         color = CATEGORY_COLORS.get(category, '#808080')
         bars = ax.bar(x_indices, heights[category], bottom=bottom, label=display_name,
                       color=color, width=0.6, edgecolor='white')
+        bar_handles.append(bars)
+        bar_labels.append(display_name)
         
         for j, (bar_height, bottom_height) in enumerate(zip(heights[category], bottom)):
             if bar_height > 0:
@@ -230,7 +234,7 @@ def plot_precision_settings(precision_settings, digits, runtimes):
         bottom += np.array(heights[category])
 
     try:
-        ax2.plot(x_indices, runtimes, color='red', marker='o', linestyle='-', linewidth=2, markersize=8, label='Runtime', zorder=10)
+        runtime_line, = ax2.plot(x_indices, runtimes, color='red', marker='o', linestyle='-', linewidth=2, markersize=8, label='Runtime', zorder=10)
     except Exception as e:
         print(f"Error plotting runtime line: {e}")
         return
@@ -250,9 +254,10 @@ def plot_precision_settings(precision_settings, digits, runtimes):
     ax.set_title('Precision Settings Distribution with Runtime', fontsize=16, weight='bold', pad=20)
     ax.grid(True, axis='y', linestyle='--', alpha=0.7)
     
-    lines, labels = ax.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax.legend(lines + lines2, labels + labels2, loc='upper center', bbox_to_anchor=(0.5, 1.15),
+    # Create legend with explicit order: bars in active_categories order, then runtime
+    legend_handles = bar_handles + [runtime_line]
+    legend_labels = bar_labels + ['Runtime']
+    ax.legend(legend_handles, legend_labels, loc='upper center', bbox_to_anchor=(0.5, 1.15),
               ncol=min(len(active_categories) + 1, 6), fontsize=15, frameon=True, edgecolor='black')
 
     plt.tick_params(axis='both', which='major', labelsize=15)
@@ -265,9 +270,9 @@ if __name__ == "__main__":
     method = 'cbsd'
     digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-    precision_settings, runtimes = run_experiments(method, digits)
-    save_precision_settings(precision_settings)
-    save_runtimes_to_csv(digits, runtimes)
+    # precision_settings, runtimes = run_experiments(method, digits)
+    # save_precision_settings(precision_settings)
+    # save_runtimes_to_csv(digits, runtimes)
     
     loaded_settings = load_precision_settings()
     loaded_runtimes = load_runtimes()

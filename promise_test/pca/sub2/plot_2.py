@@ -17,12 +17,12 @@ CATEGORY_DISPLAY_NAMES = {
 
 
 CATEGORY_COLORS = {
-    'double': '#1b9e77',  # Green
-    'float': '#d95f02',   # Orange
-    'half_float::half': '#7570b3',  # Purple
-    'flx::floatx<8, 7>': '#e7298a',  # Pink
-    'flx::floatx<4, 3>': '#66a61e',  # Lime
-    'flx::floatx<5, 2>': '#e6ab02'   # Yellow
+    'double': '#81D4FAB3',         # Sky Pop Blue
+    'float': '#FFAB91B3',          # Candy Coral
+    'half_float::half': '#BA68C8B3', # Bubblegum Purple
+    'flx::floatx<8, 7>': '#F06292B3', # Strawberry Pink
+    'flx::floatx<4, 3>': '#AED581B3', # Apple Green
+    'flx::floatx<5, 2>': '#FFF176B3', # Pineapple Yellow
 }
 
 def run_experiments(method, digits):
@@ -272,9 +272,10 @@ if __name__ == "__main__":
     method = 'whsd'
     digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-    #precision_settings, runtimes = run_experiments(method, digits)
-    #save_precision_settings(precision_settings)
-    #save_runtimes_to_csv(digits, runtimes)
+
+    # precision_settings, runtimes = run_experiments(method, digits)
+    # save_precision_settings(precision_settings)
+    # save_runtimes_to_csv(digits, runtimes)
     
     loaded_settings = load_precision_settings()
     loaded_runtimes = load_runtimes()

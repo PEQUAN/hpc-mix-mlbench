@@ -1,0 +1,7 @@
+compile:
+- g++ particle_filter.cpp -frounding-math -m64 -o particle_filter -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: particle_filter -x 128 -y 128 -z 10 -np 10000
+files: particle_filter.cpp
+log: particle_filter.log
+output: debug/

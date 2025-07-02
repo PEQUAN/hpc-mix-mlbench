@@ -15,6 +15,15 @@ CATEGORY_DISPLAY_NAMES = {
     'flx::floatx<5, 2>': 'E5M2'
 }
 
+CATEGORY_COLORS = {
+    'double': '#81D4FAB3',         # Sky Pop Blue
+    'float': '#FFAB91B3',          # Candy Coral
+    'half_float::half': '#BA68C8B3', # Bubblegum Purple
+    'flx::floatx<8, 7>': '#F06292B3', # Strawberry Pink
+    'flx::floatx<4, 3>': '#AED581B3', # Apple Green
+    'flx::floatx<5, 2>': '#FFF176B3', # Pineapple Yellow
+}
+
 def run_experiments(method, digits):
     """Run experiments, collect precision settings, and measure runtime."""
     precision_settings = []
@@ -82,7 +91,7 @@ def load_precision_settings(filename='precision_settings_3.json'):
     """Load precision settings from a JSON file."""
     if not os.path.exists(filename):
         print(f"Error: {filename} does not exist, regenerating data...")
-        precision_settings, _ = run_experiments('bhsd', [2, 3, 4, 5])
+        precision_settings, _ = run_experiments('cbsd', [2, 3, 4, 5])
         save_precision_settings(precision_settings, filename)
         return precision_settings
     try:
@@ -100,7 +109,7 @@ def load_precision_settings(filename='precision_settings_3.json'):
     except Exception as e:
         print(f"Error loading precision settings: {e}")
         print("Regenerating data due to loading error...")
-        precision_settings, _ = run_experiments('bhsd', [2, 3, 4, 5])
+        precision_settings, _ = run_experiments('cbsd', [2, 3, 4, 5])
         save_precision_settings(precision_settings, filename)
         return precision_settings
 
@@ -109,7 +118,7 @@ def load_runtimes(filename='runtimes3.csv'):
     if not os.path.exists(filename):
         print(f"Error: {filename} does not exist, regenerating data...")
         digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        precision_settings, runtimes = run_experiments('bhsd', digits)
+        precision_settings, runtimes = run_experiments('cbsd', digits)
         save_runtimes_to_csv(digits, runtimes, filename)
         return runtimes
     try:
@@ -130,7 +139,7 @@ def load_runtimes(filename='runtimes3.csv'):
         print(f"Error loading runtimes: {e}")
         print("Regenerating data due to loading error...")
         digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        precision_settings, runtimes = run_experiments('bhsd', digits)
+        precision_settings, runtimes = run_experiments('cbsd', digits)
         save_runtimes_to_csv(digits, runtimes, filename)
         return runtimes
 
@@ -195,15 +204,20 @@ def plot_precision_settings(precision_settings, digits, runtimes):
     
     ax2 = ax.twinx()
     
-    colors = plt.cm.Set2(np.linspace(0, 1, len(categories)))
-
     x_indices = np.arange(len(digits))
 
     bottom = np.zeros(len(digits))
-    for i, category in enumerate(active_categories):
+    # Store bar handles for legend
+    bar_handles = []
+    bar_labels = []
+    for category in active_categories:
         display_name = CATEGORY_DISPLAY_NAMES.get(category, category)
+        # Use fixed color from CATEGORY_COLORS, fallback to gray if category not in mapping
+        color = CATEGORY_COLORS.get(category, '#808080')
         bars = ax.bar(x_indices, heights[category], bottom=bottom, label=display_name,
-                      color=colors[i], width=0.6, edgecolor='white')
+                      color=color, width=0.6, edgecolor='white')
+        bar_handles.append(bars)
+        bar_labels.append(display_name)
         
         for j, (bar_height, bottom_height) in enumerate(zip(heights[category], bottom)):
             if bar_height > 0:
@@ -220,13 +234,13 @@ def plot_precision_settings(precision_settings, digits, runtimes):
         bottom += np.array(heights[category])
 
     try:
-        ax2.plot(x_indices, runtimes, color='red', marker='o', linestyle='-', linewidth=2, markersize=8, label='Runtime', zorder=10)
+        runtime_line, = ax2.plot(x_indices, runtimes, color='red', marker='o', linestyle='-', linewidth=2, markersize=8, label='Runtime', zorder=10)
     except Exception as e:
         print(f"Error plotting runtime line: {e}")
         return
 
     ax.set_ylim(0, max(np.sum([heights[cat] for cat in active_categories], axis=0)) * 1)
-    ax2.set_ylim(0, max(runtimes) * 1.5 if runtimes else 1.0)  
+    ax2.set_ylim(0, max(runtimes) * 1.5 if runtimes else 1.0)  # Adjust for visibility
     
     ax.set_xticks(x_indices)
     ax.set_xticklabels(digits)
@@ -240,9 +254,10 @@ def plot_precision_settings(precision_settings, digits, runtimes):
     ax.set_title('Precision Settings Distribution with Runtime', fontsize=16, weight='bold', pad=20)
     ax.grid(True, axis='y', linestyle='--', alpha=0.7)
     
-    lines, labels = ax.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax.legend(lines + lines2, labels + labels2, loc='upper center', bbox_to_anchor=(0.5, 1.15),
+    # Create legend with explicit order: bars in active_categories order, then runtime
+    legend_handles = bar_handles + [runtime_line]
+    legend_labels = bar_labels + ['Runtime']
+    ax.legend(legend_handles, legend_labels, loc='upper center', bbox_to_anchor=(0.5, 1.15),
               ncol=min(len(active_categories) + 1, 6), fontsize=15, frameon=True, edgecolor='black')
 
     plt.tick_params(axis='both', which='major', labelsize=15)
@@ -255,10 +270,10 @@ if __name__ == "__main__":
     method = 'cbsd'
     digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-    precision_settings, runtimes = run_experiments(method, digits)
-    save_precision_settings(precision_settings)
-    save_runtimes_to_csv(digits, runtimes)
-
+    # precision_settings, runtimes = run_experiments(method, digits)
+    # save_precision_settings(precision_settings)
+    # save_runtimes_to_csv(digits, runtimes)
+    
     loaded_settings = load_precision_settings()
     loaded_runtimes = load_runtimes()
 

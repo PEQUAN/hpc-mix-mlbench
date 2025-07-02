@@ -286,19 +286,6 @@ int read_csv(const std::string& filename, DataPoint data[], int& n_samples) {
     return 0;
 }
 
-void write_predictions(const DataPoint data[], const __PROMISE__ predictions[], 
-                      int n_samples, const std::string& filename) {
-    std::ofstream file(filename);
-    if (!file.is_open()) return;
-    file << "CRIM,RM,LSTAT,PTRATIO,MEDV,prediction\n";
-    
-    for (int i = 0; i < n_samples; ++i) {
-        for (int j = 0; j < N_FEATURES; ++j) {
-            file << data[i].features[j] << (j < N_FEATURES - 1 ? "," : "");
-        }
-        file << "," << data[i].target << "," << predictions[i] << "\n";
-    }
-}
 
 __PROMISE__ compute_r2_score(const DataPoint data[], const __PROMISE__ predictions[], int n_samples) {
     __PROMISE__ mean_y = 0.0;
@@ -365,8 +352,6 @@ int main() {
     
     __PROMISE__ r2 = compute_r2_score(test_data, predictions, test_size);
     std::cout << "R^2 Score: " << r2 << std::endl;
-    
-    write_predictions(test_data, predictions, test_size, "../svm/pred_housing.csv");
     
     return 0;
 }
