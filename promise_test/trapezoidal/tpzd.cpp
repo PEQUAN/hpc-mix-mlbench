@@ -126,10 +126,8 @@ void trapezoidal_step(__PROMISE__ t, __PROMISE__ h, __PROMISE__* y, int n, __PRO
 
 void trapezoidal_solve(__PROMISE__ t0, __PROMISE__ tf, __PROMISE__ h, __PROMISE__* y0, int n,
                        __PROMISE__* results, int* num_steps) {
-    *num_steps = static_cast<int>((tf - t0) / h) + 1;
     if (*num_steps <= 0) return;
 
-    results = new __PROMISE__[*num_steps * n];
     __PROMISE__* y = new __PROMISE__[n];
     __PROMISE__* y_new = new __PROMISE__[n];
 
@@ -187,7 +185,7 @@ int main() {
     int n = 10;
     __PROMISE__ t0 = 0.0;
     __PROMISE__ tf = 1.0;
-    __PROMISE__* y0 = new __PROMISE__[n];
+    __PR_1__* y0 = new __PR_1__[n];
     y0[0] = 1.0;
     for (int i = 1; i < n; ++i) y0[i] = 0.0;
 
@@ -195,9 +193,9 @@ int main() {
     __PROMISE__ h = 0.001;
     std::cout << "h, Max Abs Error, Mean Abs Error, RMSE, Max Rel Error\n";
 
-    
     int num_steps = static_cast<int>((tf - t0) / h) + 1;
-    __PR_1__* results = new __PR_1__[num_steps * n];
+    __PR_2__* results = new __PR_2__[num_steps * n];
+
     trapezoidal_solve(t0, tf, h, y0, n, results, &num_steps);
 
     __PROMISE__ max_abs_error, mean_abs_error, rmse, max_rel_error;
@@ -213,3 +211,4 @@ int main() {
     delete[] y0;
     return 0;
 }
+    
