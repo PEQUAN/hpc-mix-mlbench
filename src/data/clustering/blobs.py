@@ -25,5 +25,7 @@ if __name__ == "__main__":
     
     X_new = np.hstack((X, y.reshape(-1, 1)))
     X_new = pd.DataFrame(X_new)
-    pd.DataFrame(X_new).to_csv(f"blobs_{dim}d_{n_clusters}_include_y.csv", index=True, header=True)
-    
+    if num == 10000:
+        pd.DataFrame(X_new).to_csv(f"blobs_{dim}d_{n_clusters}_include_y.csv", index=True, header=True)
+    else:
+        pd.DataFrame(X_new).to_csv(f"blobs_{dim}d_{n_clusters}_include_y_{num}.csv", index=True, header=True)

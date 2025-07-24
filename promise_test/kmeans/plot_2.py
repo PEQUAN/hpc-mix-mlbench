@@ -271,11 +271,10 @@ def plot_precision_settings(precision_settings, digits, runtimes):
 if __name__ == "__main__":
     method = 'whsd'
     digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-
-    # precision_settings, runtimes = run_experiments(method, digits)
-    # save_precision_settings(precision_settings)
-    # save_runtimes_to_csv(digits, runtimes)
+    
+    precision_settings, runtimes = run_experiments(method, digits)
+    save_precision_settings(precision_settings)
+    save_runtimes_to_csv(digits, runtimes)
     
     loaded_settings = load_precision_settings()
     loaded_runtimes = load_runtimes()

@@ -505,7 +505,16 @@ int main(int argc, char* argv[]) {
     }
 
     KMeans kmeans(K, NUM_FEATURES);
+/*
+From 
+python3 blobs.py 10000 2 10
+python3 blobs.py 10000 20 10
+python3 blobs.py 10000 2 20
+python3 blobs.py 10000 2 30
 
+blobs_{dim}d_{n_clusters}_include_y.csv
+./kmeans 10 20 - #cluster=10, 20-dimensional data points
+*/
     size_t numPoints;
     DataPoint* dataPoints = read_csv("../data/clustering/blobs_20d_10_include_y.csv", NUM_FEATURES, numPoints);
     if (!dataPoints) {
