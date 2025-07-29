@@ -1,2 +1,2 @@
-g++ ir3.cpp -o ir3
+g++ ir3_randsvd.cpp -o ir3
 ./ir3
