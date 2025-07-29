@@ -1,7 +1,0 @@
-compile:
-- g++ ir.cpp -frounding-math -m64 -o ir.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
-
-run: ir.out
-files: ir.cpp
-log: ir.log
-output: debug/

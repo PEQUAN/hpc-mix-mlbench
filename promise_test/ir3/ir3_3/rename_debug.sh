@@ -1,5 +1,5 @@
 #!/bin/bash
-rm -rf debug2 debug4 debug6 debug8
+rm -rf debug1_1 debug1_2 debug1_3 debug1_4 debug1_5 debug1_6 debug1_7 debug1_8 debug1_9 debug1_10 debug1_11
 promise --precs=chsd --nbDigits=1 --noParsing
 mv debug debug1_1
 promise --precs=chsd --nbDigits=2 --noParsing
@@ -20,6 +20,10 @@ promise --precs=chsd --nbDigits=9 --noParsing
 mv debug debug1_9
 promise --precs=chsd --nbDigits=10 --noParsing
 mv debug debug1_10
+promise --precs=chsd --nbDigits=11 --noParsing
+mv debug debug1_11
+
+rm -rf debug2_1 debug2_2 debug2_3 debug2_4 debug2_5 debug2_6 debug2_7 debug2_8 debug2_9 debug2_10 debug2_11
 promise --precs=whsd --nbDigits=1 --noParsing
 mv debug debug2_1
 promise --precs=whsd --nbDigits=2 --noParsing
@@ -40,6 +44,10 @@ promise --precs=whsd --nbDigits=9 --noParsing
 mv debug debug2_9
 promise --precs=whsd --nbDigits=10 --noParsing
 mv debug debug2_10
+promise --precs=whsd --nbDigits=11 --noParsing
+mv debug debug2_11
+
+rm -rf debug3_1 debug3_2 debug3_3 debug3_4 debug3_5 debug3_6 debug3_7 debug3_8 debug3_9 debug3_10 debug3_11
 promise --precs=cbsd --nbDigits=1 --noParsing
 mv debug debug3_1
 promise --precs=cbsd --nbDigits=2 --noParsing
@@ -60,6 +68,10 @@ promise --precs=cbsd --nbDigits=9 --noParsing
 mv debug debug3_9
 promise --precs=cbsd --nbDigits=10 --noParsing
 mv debug debug3_10
+promise --precs=cbsd --nbDigits=11 --noParsing
+mv debug debug3_11
+
+rm -rf debug4_1 debug4_2 debug4_3 debug4_4 debug4_5 debug4_6 debug4_7 debug4_8 debug4_9 debug4_10 debug4_11
 promise --precs=wbsd --nbDigits=1 --noParsing
 mv debug debug4_1
 promise --precs=wbsd --nbDigits=2 --noParsing
@@ -80,3 +92,5 @@ promise --precs=wbsd --nbDigits=9 --noParsing
 mv debug debug4_9
 promise --precs=wbsd --nbDigits=10 --noParsing
 mv debug debug4_10
+promise --precs=wbsd --nbDigits=11 --noParsing
+mv debug debug4_11
