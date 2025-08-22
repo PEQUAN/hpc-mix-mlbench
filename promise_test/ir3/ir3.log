@@ -1,15 +1,7 @@
-07/29 16:52:23: 🤘 cadnaPromise 🤘
-07/29 16:52:23: Using the compiler: g++
-07/29 16:52:23: We are working with 1 file and 5 different types
-07/29 16:52:23: The expectation is 10 digits.
-07/29 16:52:23: a) Get a reference result with cadna (double)
-07/29 16:52:25: ir3.cpp: In instantiation of ‘typename Policy::UpdateType* iterative_refinement(typename Policy::ResType*, int*, int*, int, int, typename Policy::ResType*, int, typename Policy::ResType, typename Policy::ResType*&, int&) [with Policy = PrecisionPolicy<double, double, double, double, double_st>; typename Policy::UpdateType = double_st; typename Policy::ResType = double]’:
-ir3.cpp:414:65:   required from here
-ir3.cpp:347:59: error: cannot convert ‘PrecisionPolicy<double, double, double, double, double_st>::SubType*’ {aka ‘double*’} to ‘PrecisionPolicy<double, double, double, double, double_st>::UpdateType*’ {aka ‘double_st*’} in initialization
-  347 |     typename Policy::UpdateType* x = initial_solve<Policy>(L, U, n, P, b_sub);
-      |                                      ~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~
-      |                                                           |
-      |                                                           PrecisionPolicy<double, double, double, double, double_st>::SubType* {aka double*}
-
-07/29 16:52:25: Compilation failed
-Is Cadna installed? Did you link your cade with Cadna with `-lcadnac`, `-L$CADNA_PATH/lib` and `-I$CADNA_PATH/include` ?
+08/22 04:26:23: 🤘 cadnaPromise 🤘
+08/22 04:26:23: Using the compiler: g++
+08/22 04:26:23: We are working with 1 file and 84 different types
+08/22 04:26:23: The expectation is 2 digits.
+08/22 04:26:23: a) Get a reference result with cadna (double)
+08/22 04:26:43: b) Check with highest format (Double)
+08/22 04:26:46: c) Delta-Debug Single/Double
