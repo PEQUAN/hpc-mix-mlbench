@@ -556,7 +556,7 @@ __PROMISE__* iterative_refinement(const __PROMISE__* A, int n, const __PROMISE__
 
 int main() {
     int n = 100; // Matrix size
-    __PROMISE__ kappa = 1e4; // Condition number
+    __PROMISE__ kappa = 1e3; // Condition number
     int max_iter = n;
 
     // Generate matrix A using gallery_randsvd

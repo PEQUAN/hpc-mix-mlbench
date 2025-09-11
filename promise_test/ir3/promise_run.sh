@@ -1,4 +1,4 @@
-promise --precs=hsd --nbDigits=1000 --noParsing
+promise --precs=hsd --nbDigits=2 --noParsing
 mv debug debug2
 promise --precs=hsd --nbDigits=4 --noParsing
 mv debug debug4
