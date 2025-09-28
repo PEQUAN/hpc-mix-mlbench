@@ -1,2 +1,2 @@
-g++ qr_practical.cpp -o qr
+g++ qr_1138_bus.cpp -o qr
 ./qr

@@ -33,7 +33,7 @@ def run_experiments(method, digits):
             f'--precs={method}',
             f'--nbDigits={digit}',
             f'--conf=promise.yml',
-            '--noParsing',
+            
             '--fp=fp.json'
         ]
         start_time = time.time()
@@ -252,7 +252,7 @@ def plot_precision_settings(precision_settings, digits, runtimes):
     ax.set_ylabel('Number of variables of each type', fontsize=16, weight='bold')
     ax2.set_ylabel('Runtime (seconds)', fontsize=16, weight='bold', color='red')
     ax2.tick_params(axis='y', labelcolor='red')
-    ax.set_title('Precision Settings Distribution with Runtime', fontsize=16, weight='bold', pad=20)
+    ax.set_title('Precision Settings Distribution with Runtime (I)', fontsize=16, weight='bold', pad=20)
     ax.grid(True, axis='y', linestyle='--', alpha=0.7)
     
     # Create legend with explicit order: bars in active_categories order, then runtime
@@ -271,9 +271,9 @@ if __name__ == "__main__":
     method = 'chsd'
     digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-    precision_settings, runtimes = run_experiments(method, digits)
-    save_precision_settings(precision_settings)
-    save_runtimes_to_csv(digits, runtimes)
+    #precision_settings, runtimes = run_experiments(method, digits)
+    #save_precision_settings(precision_settings)
+    #save_runtimes_to_csv(digits, runtimes)
     
     loaded_settings = load_precision_settings()
     loaded_runtimes = load_runtimes()
