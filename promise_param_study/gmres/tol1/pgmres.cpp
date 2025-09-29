@@ -10,19 +10,19 @@
 
 struct CSRMatrix {
     int n;
-    double* values;
+    __PROMISE__* values;
     int* col_indices;
     int* row_ptr;
     int nnz;
 };
 
-struct Entry { int row, col; double val; };
+struct Entry { int row, col; __PROMISE__ val; };
 
 struct Result {
-    double* x;
-    double residual;
+    __PROMISE__* x;
+    __PROMISE__ residual;
     int iterations;
-    double* residual_history;
+    __PROMISE__* residual_history;
     int residual_history_size;
 };
 
@@ -56,7 +56,7 @@ CSRMatrix read_mtx_file(const std::string& filename) {
             ss.clear();
             ss.str(line);
             int i, j;
-            double val;
+            __PROMISE__ val;
             ss >> i >> j >> val;
             if (i < 1 || j < 1 || i > n || j > n) {
                 throw std::runtime_error("Invalid indices in Matrix Market file");
@@ -74,7 +74,7 @@ CSRMatrix read_mtx_file(const std::string& filename) {
     }
 
     A.nnz = entry_count;
-    A.values = new double[A.nnz]();
+    A.values = new __PROMISE__[A.nnz]();
     A.col_indices = new int[A.nnz]();
     A.row_ptr = new int[n + 1]();
     if (!A.values || !A.col_indices || !A.row_ptr) {
@@ -119,7 +119,7 @@ void free_result(Result& result) {
     if (result.residual_history) { delete[] result.residual_history; result.residual_history = nullptr; }
 }
 
-void matvec(const CSRMatrix& A, const double* x, double* y) {
+void matvec(const CSRMatrix& A, const __PROMISE__* x, __PROMISE__* y) {
     #pragma omp parallel for schedule(dynamic) if (A.n > 1000)
     for (int i = 0; i < A.n; ++i) {
         y[i] = 0.0;
@@ -129,9 +129,9 @@ void matvec(const CSRMatrix& A, const double* x, double* y) {
     }
 }
 
-double* generate_rhs(const CSRMatrix& A) {
-    double* x_true = new double[A.n]();
-    double* b = new double[A.n]();
+__PROMISE__* generate_rhs(const CSRMatrix& A) {
+    __PROMISE__* x_true = new __PROMISE__[A.n]();
+    __PROMISE__* b = new __PROMISE__[A.n]();
     if (!x_true || !b) {
         delete[] x_true;
         delete[] b;
@@ -146,8 +146,8 @@ double* generate_rhs(const CSRMatrix& A) {
     return b;
 }
 
-double dot(const double* a, const double* b, int n) {
-    double sum = 0.0;
+__PROMISE__ dot(const __PROMISE__* a, const __PROMISE__* b, int n) {
+    __PROMISE__ sum = 0.0;
     #pragma omp parallel for reduction(+:sum) if (n > 1000)
     for (int i = 0; i < n; ++i) {
         sum += a[i] * b[i];
@@ -155,29 +155,54 @@ double dot(const double* a, const double* b, int n) {
     return sum;
 }
 
-void axpy(double alpha, const double* x, const double* y, int n, double* result) {
+void axpy(__PROMISE__ alpha, const __PROMISE__* x, const __PROMISE__* y, int n, __PROMISE__* result) {
     #pragma omp parallel for if (n > 1000)
     for (int i = 0; i < n; ++i) {
         result[i] = alpha * x[i] + y[i];
     }
 }
 
-double norm(const double* v, int n) {
-    double d = dot(v, v, n);
-    if (std::isnan(d) || std::isinf(d) || d < 0.0) {
+__PROMISE__ norm(const __PROMISE__* v, int n) {
+    __PROMISE__ d = dot(v, v, n);
+    if (isnan(d) || isinf(d) || d < 0.0) {
         throw std::runtime_error("Invalid norm");
     }
-    return std::sqrt(d);
+    return sqrt(d);
 }
 
-CSRMatrix compute_ilu_factorization(const CSRMatrix& A) {
+__PROMISE__ compute_forward_error(const __PROMISE__* x, int n) {
+    __PROMISE__* x_true = new __PROMISE__[n]();
+    if (!x_true) throw std::runtime_error("Memory allocation failed for x_true");
+    
+    for (int i = 0; i < n; ++i) {
+        x_true[i] = 1.0;
+    }
+    
+    __PROMISE__* error = new __PROMISE__[n]();
+    if (!error) {
+        delete[] x_true;
+        throw std::runtime_error("Memory allocation failed for error");
+    }
+    
+    for (int i = 0; i < n; ++i) {
+        error[i] = x[i] - x_true[i];
+    }
+    
+    __PROMISE__ forward_error = norm(error, n);
+    
+    delete[] x_true;
+    delete[] error;
+    return forward_error;
+}
+
+CSRMatrix compute_sparse_lu_factorization(const CSRMatrix& A) {
     CSRMatrix LU = {A.n, nullptr, nullptr, nullptr, A.nnz};
-    LU.values = new double[A.nnz]();
+    LU.values = new __PROMISE__[A.nnz]();
     LU.col_indices = new int[A.nnz]();
     LU.row_ptr = new int[A.n + 1]();
     if (!LU.values || !LU.col_indices || !LU.row_ptr) {
         free_csr_matrix(LU);
-        throw std::runtime_error("Memory allocation failed for ILU");
+        throw std::runtime_error("Memory allocation failed for sparse LU");
     }
     std::copy(A.values, A.values + A.nnz, LU.values);
     std::copy(A.col_indices, A.col_indices + A.nnz, LU.col_indices);
@@ -185,7 +210,8 @@ CSRMatrix compute_ilu_factorization(const CSRMatrix& A) {
 
     bool has_zero_diagonal = false;
     for (int i = 0; i < A.n; ++i) {
-        double diag = 0.0;
+        // Find diagonal element
+        __PROMISE__ diag = 0.0;
         int diag_idx = -1;
         for (int j = LU.row_ptr[i]; j < LU.row_ptr[i + 1]; ++j) {
             if (LU.col_indices[j] == i) {
@@ -194,20 +220,15 @@ CSRMatrix compute_ilu_factorization(const CSRMatrix& A) {
                 break;
             }
         }
-        if (diag_idx == -1 || std::abs(diag) < 1e-10) {
+        if (diag_idx == -1 || abs(diag) < 1e-15) {
             has_zero_diagonal = true;
-            diag = 1.0; // Default for zero or missing diagonal
+            diag = 1.0; // Fallback for zero or missing diagonal
             if (diag_idx != -1) LU.values[diag_idx] = diag;
         }
 
-        for (int j = LU.row_ptr[i]; j < LU.row_ptr[i + 1]; ++j) {
-            if (LU.col_indices[j] < i) {
-                LU.values[j] /= diag;
-            }
-        }
-
+        // Perform elimination for rows k > i
         for (int k = i + 1; k < A.n; ++k) {
-            double lik = 0.0;
+            __PROMISE__ lik = 0.0;
             int lik_idx = -1;
             for (int j = LU.row_ptr[k]; j < LU.row_ptr[k + 1]; ++j) {
                 if (LU.col_indices[j] == i) {
@@ -218,6 +239,7 @@ CSRMatrix compute_ilu_factorization(const CSRMatrix& A) {
             }
             if (lik_idx == -1) continue;
 
+            // Update row k
             for (int j = LU.row_ptr[k]; j < LU.row_ptr[k + 1]; ++j) {
                 if (LU.col_indices[j] <= i) continue;
                 for (int m = LU.row_ptr[i]; m < LU.row_ptr[i + 1]; ++m) {
@@ -231,13 +253,13 @@ CSRMatrix compute_ilu_factorization(const CSRMatrix& A) {
         }
     }
     if (has_zero_diagonal) {
-        std::cerr << "Warning: Matrix has zero or near-zero diagonal elements in ILU" << std::endl;
+        std::cerr << "Warning: Matrix has zero or near-zero diagonal elements in sparse LU" << std::endl;
     }
     return LU;
 }
 
-void forward_solve(const CSRMatrix& LU, const double* r, double* z, int n) {
-    double* temp = new double[n]();
+void forward_solve(const CSRMatrix& LU, const __PROMISE__* r, __PROMISE__* z, int n) {
+    __PROMISE__* temp = new __PROMISE__[n]();
     if (!temp) throw std::runtime_error("Memory allocation failed");
     for (int i = 0; i < n; ++i) {
         temp[i] = r[i];
@@ -246,17 +268,17 @@ void forward_solve(const CSRMatrix& LU, const double* r, double* z, int n) {
                 temp[i] -= LU.values[j] * temp[LU.col_indices[j]];
             }
         }
-        z[i] = temp[i];
+        z[i] = temp[i]; // L is unit lower triangular
     }
     delete[] temp;
 }
 
-void backward_solve(const CSRMatrix& LU, const double* z, double* x, int n) {
-    double* temp = new double[n]();
+void backward_solve(const CSRMatrix& LU, const __PROMISE__* z, __PROMISE__* x, int n) {
+    __PROMISE__* temp = new __PROMISE__[n]();
     if (!temp) throw std::runtime_error("Memory allocation failed");
     std::copy(z, z + n, temp);
     for (int i = n - 1; i >= 0; --i) {
-        double diag = 0.0;
+        __PROMISE__ diag = 0.0;
         int diag_idx = -1;
         for (int j = LU.row_ptr[i]; j < LU.row_ptr[i + 1]; ++j) {
             if (LU.col_indices[j] == i) {
@@ -265,7 +287,7 @@ void backward_solve(const CSRMatrix& LU, const double* z, double* x, int n) {
                 break;
             }
         }
-        if (diag_idx == -1 || std::abs(diag) < 1e-10) {
+        if (diag_idx == -1 || abs(diag) < 1e-10) {
             diag = 1.0; // Fallback for zero diagonal
         }
         x[i] = temp[i] / diag;
@@ -278,72 +300,25 @@ void backward_solve(const CSRMatrix& LU, const double* z, double* x, int n) {
     delete[] temp;
 }
 
-void apply_ilu_preconditioner(const CSRMatrix& LU, const double* r, double* z, int n) {
-    double* temp = new double[n]();
+void apply_sparse_lu_preconditioner(const CSRMatrix& LU, const __PROMISE__* r, __PROMISE__* z, int n) {
+    __PROMISE__* temp = new __PROMISE__[n]();
     if (!temp) throw std::runtime_error("Memory allocation failed");
     forward_solve(LU, r, temp, n);
     backward_solve(LU, temp, z, n);
     delete[] temp;
 }
 
-double compute_forward_error(const double* x, int n) {
-    double* x_true = new double[n]();
-    if (!x_true) throw std::runtime_error("Memory allocation failed for x_true");
-    
-    // Set x_true to all ones, matching generate_rhs
-    for (int i = 0; i < n; ++i) {
-        x_true[i] = 1.0;
-    }
-    
-    // Compute error = x - x_true
-    double* error = new double[n]();
-    if (!error) {
-        delete[] x_true;
-        throw std::runtime_error("Memory allocation failed for error");
-    }
-    
-    for (int i = 0; i < n; ++i) {
-        error[i] = x[i] - x_true[i];
-    }
-    
-    // Compute L2 norm of error
-    double forward_error = norm(error, n);
-    
-    delete[] x_true;
-    delete[] error;
-    return forward_error;
-}
 
-void write_solution(const double* x, int n, const std::string& filename,
-                    const double* residual_history, int residual_history_size,
-                    double forward_error) {
-    std::ofstream file(filename);
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open output file: " + filename);
-    }
-    file << "Index,Solution\n";
-    for (int i = 0; i < n; ++i) {
-        file << i << "," << x[i] << "\n";
-    }
-    file << "\nIteration,Residual\n";
-    for (int i = 0; i < residual_history_size; ++i) {
-        file << i << "," << residual_history[i] << "\n";
-    }
-    file << "\nForward_Error\n";
-    file << forward_error << "\n";
-    file.close();
-}
-
-void arnoldi_step(const CSRMatrix& A, const CSRMatrix& LU, double* V, double* H, int j, int n,
-                  double* w, double* z, double initial_norm, int restart) {
-    apply_ilu_preconditioner(LU, &V[j * n], z, n);
+void arnoldi_step(const CSRMatrix& A, const CSRMatrix& LU, __PROMISE__* V, __PROMISE__* H, int j, int n,
+                  __PROMISE__* w, __PROMISE__* z, __PROMISE__ initial_norm, int restart) {
+    apply_sparse_lu_preconditioner(LU, &V[j * n], z, n);
     matvec(A, z, w);
     for (int i = 0; i <= j; ++i) {
-        double h_ij = dot(w, &V[i * n], n);
+        __PROMISE__ h_ij = dot(w, &V[i * n], n);
         H[i * restart + j] = h_ij;
         axpy(-h_ij, &V[i * n], w, n, w);
     }
-    double h_jp1_j = norm(w, n);
+    __PROMISE__ h_jp1_j = norm(w, n);
     H[(j + 1) * restart + j] = h_jp1_j;
     if (h_jp1_j < 1e-12 * initial_norm) {
         throw std::runtime_error("Arnoldi breakdown at iteration " + std::to_string(j));
@@ -354,12 +329,11 @@ void arnoldi_step(const CSRMatrix& A, const CSRMatrix& LU, double* V, double* H,
     }
 }
 
-Result gmres(const CSRMatrix& A, const double* b, int max_iter, double tol, int restart) {
+Result gmres(const CSRMatrix& A, const __PROMISE__* b, int max_iter, __PROMISE__ tol, int restart) {
     int n = A.n;
-    Result result = {new double[n](), 0.0, 0, nullptr, 0};
+    Result result = {new __PROMISE__[n](), 0.0, 0, nullptr, 0};
     if (!result.x) throw std::runtime_error("Memory allocation failed");
 
-    // Validate inputs
     if (restart > n || restart <= 0) {
         free_result(result);
         throw std::runtime_error("Invalid restart parameter");
@@ -369,16 +343,16 @@ Result gmres(const CSRMatrix& A, const double* b, int max_iter, double tol, int 
         throw std::runtime_error("Invalid max_iter parameter");
     }
 
-    double* r = new double[n]();
-    CSRMatrix LU = compute_ilu_factorization(A);
-    double* residual_history = new double[max_iter + 1]();
-    double* V = new double[n * (restart + 1)]();
-    double* H = new double[(restart + 1) * restart]();
-    double* w = new double[n]();
-    double* z = new double[n]();
-    double* g = new double[restart + 1]();
-    double* cs = new double[restart]();
-    double* sn = new double[restart]();
+    __PROMISE__* r = new __PROMISE__[n]();
+    CSRMatrix LU = compute_sparse_lu_factorization(A);
+    __PROMISE__* residual_history = new __PROMISE__[max_iter + 1]();
+    __PROMISE__* V = new __PROMISE__[n * (restart + 1)]();
+    __PROMISE__* H = new __PROMISE__[(restart + 1) * restart]();
+    __PROMISE__* w = new __PROMISE__[n]();
+    __PROMISE__* z = new __PROMISE__[n]();
+    __PROMISE__* g = new __PROMISE__[restart + 1]();
+    __PROMISE__* cs = new __PROMISE__[restart]();
+    __PROMISE__* sn = new __PROMISE__[restart]();
     int residual_history_size = 0;
 
     if (!r || !residual_history || !V || !H || !w || !z || !g || !cs || !sn) {
@@ -389,10 +363,9 @@ Result gmres(const CSRMatrix& A, const double* b, int max_iter, double tol, int 
         throw std::runtime_error("Memory allocation failed");
     }
 
-    // Scope-based cleanup
     struct Cleanup {
-        double* r; double* residual_history; double* V; double* H; double* w;
-        double* z; double* g; double* cs; double* sn; CSRMatrix* LU;
+        __PROMISE__* r; __PROMISE__* residual_history; __PROMISE__* V; __PROMISE__* H; __PROMISE__* w;
+        __PROMISE__* z; __PROMISE__* g; __PROMISE__* cs; __PROMISE__* sn; CSRMatrix* LU;
         ~Cleanup() {
             delete[] r; delete[] residual_history; delete[] V; delete[] H; delete[] w;
             delete[] z; delete[] g; delete[] cs; delete[] sn;
@@ -400,26 +373,23 @@ Result gmres(const CSRMatrix& A, const double* b, int max_iter, double tol, int 
         }
     } cleanup = {r, residual_history, V, H, w, z, g, cs, sn, &LU};
 
-    // Initial residual: r = b
     std::copy(b, b + n, r);
-    double initial_norm = norm(r, n);
+    __PROMISE__ initial_norm = norm(r, n);
     std::cout << "Initial norm of residual: " << initial_norm << std::endl;
-    double tol_abs = tol ; // tol* std::max(initial_norm, 1e-16), remove this improve the score a lot
+    __PROMISE__ tol_abs = 1e-16;// tol * std::max(initial_norm, 1e-16);
 
     int total_iterations = 0;
     while (total_iterations < max_iter) {
-        // Compute true residual: r = b - A*x
         matvec(A, result.x, r);
         axpy(-1.0, r, b, n, r);
-        double r_norm = norm(r, n);
+        __PROMISE__ r_norm = norm(r, n);
         if (residual_history_size < max_iter + 1) {
             residual_history[residual_history_size++] = r_norm;
         }
-        if (r_norm < tol_abs || r_norm < 0 || std::isnan(r_norm) || std::isinf(r_norm)) {
+        if (r_norm < tol_abs || r_norm < 0 || isnan(r_norm) || isinf(r_norm)) {
             break;
         }
 
-        // Initialize V[:,0]
         for (int i = 0; i < n; ++i) V[i] = r[i] / r_norm;
         g[0] = r_norm;
         std::fill(g + 1, g + restart + 1, 0.0);
@@ -431,15 +401,14 @@ Result gmres(const CSRMatrix& A, const double* b, int max_iter, double tol, int 
             for (j = 0; j < restart && total_iterations < max_iter; ++j) {
                 arnoldi_step(A, LU, V, H, j, n, w, z, initial_norm, restart);
 
-                // Apply Givens rotations
                 for (int i = 0; i < j; ++i) {
-                    double temp = cs[i] * H[i * restart + j] + sn[i] * H[(i + 1) * restart + j];
+                    __PROMISE__ temp = cs[i] * H[i * restart + j] + sn[i] * H[(i + 1) * restart + j];
                     H[(i + 1) * restart + j] = -sn[i] * H[i * restart + j] + cs[i] * H[(i + 1) * restart + j];
                     H[i * restart + j] = temp;
                 }
-                double a = H[j * restart + j];
-                double b1 = H[(j + 1) * restart + j];
-                double rho = std::sqrt(a * a + b1 * b1);
+                __PROMISE__ a = H[j * restart + j];
+                __PROMISE__ b1 = H[(j + 1) * restart + j];
+                __PROMISE__ rho = sqrt(a * a + b1 * b1);
                 if (rho < 1e-12 * initial_norm) {
                     throw std::runtime_error("Givens rotation breakdown");
                 }
@@ -448,11 +417,11 @@ Result gmres(const CSRMatrix& A, const double* b, int max_iter, double tol, int 
                 H[j * restart + j] = rho;
                 H[(j + 1) * restart + j] = 0.0;
 
-                double temp = cs[j] * g[j] + sn[j] * g[j + 1];
+                __PROMISE__ temp = cs[j] * g[j] + sn[j] * g[j + 1];
                 g[j + 1] = -sn[j] * g[j] + cs[j] * g[j + 1];
                 g[j] = temp;
 
-                r_norm = std::abs(g[j + 1]);
+                r_norm = abs(g[j + 1]);
                 if (residual_history_size < max_iter + 1) {
                     residual_history[residual_history_size++] = r_norm;
                 }
@@ -471,15 +440,14 @@ Result gmres(const CSRMatrix& A, const double* b, int max_iter, double tol, int 
             breakdown = true;
         }
 
-        // Solve least-squares problem
-        double* y = new double[j]();
+        __PROMISE__* y = new __PROMISE__[j]();
         if (!y) throw std::runtime_error("Memory allocation failed");
         for (int i = j - 1; i >= 0 && !breakdown; --i) {
             y[i] = g[i];
             for (int k = i + 1; k < j; ++k) {
                 y[i] -= H[i * restart + k] * y[k];
             }
-            if (std::abs(H[i * restart + i]) < 1e-12 * initial_norm) {
+            if (abs(H[i * restart + i]) < 1e-12 * initial_norm) {
                 std::cerr << "Warning: Least-squares breakdown at iteration " << total_iterations << std::endl;
                 breakdown = true;
                 break;
@@ -487,10 +455,9 @@ Result gmres(const CSRMatrix& A, const double* b, int max_iter, double tol, int 
             y[i] /= H[i * restart + i];
         }
 
-        // Update solution
         if (!breakdown) {
             for (int k = 0; k < j; ++k) {
-                apply_ilu_preconditioner(LU, &V[k * n], z, n);
+                apply_sparse_lu_preconditioner(LU, &V[k * n], z, n);
                 axpy(y[k], z, result.x, n, result.x);
             }
         }
@@ -501,10 +468,9 @@ Result gmres(const CSRMatrix& A, const double* b, int max_iter, double tol, int 
         }
     }
 
-    // Final residual
     matvec(A, result.x, r);
     axpy(-1.0, r, b, n, r);
-    double r_norm = norm(r, n);
+    __PROMISE__ r_norm = norm(r, n);
     if (residual_history_size < max_iter + 1) {
         residual_history[residual_history_size++] = r_norm;
     }
@@ -514,35 +480,38 @@ Result gmres(const CSRMatrix& A, const double* b, int max_iter, double tol, int 
     result.residual_history = residual_history;
     result.residual_history_size = residual_history_size;
 
-    // Prevent cleanup from deleting residual_history (transferred to result)
     cleanup.residual_history = nullptr;
     return result;
 }
 
 int main(int argc, char* argv[]) {
     CSRMatrix A = {0, nullptr, nullptr, nullptr, 0};
-    double* b = nullptr;
+    __PROMISE__* b = nullptr;
     Result result = {nullptr, 0.0, 0, nullptr, 0};
 
     try {
-        std::string filename = (argc > 1) ? argv[1] : "../data/suitesparse/1138_bus.mtx";
+        std::string filename = (argc > 1) ? argv[1] : "1138_bus.mtx";
 
         A = read_mtx_file(filename);
         b = generate_rhs(A);
 
         std::cout << "A.n=" << A.n << ", A.nnz=" << A.nnz << std::endl;
 
-        int max_iter = (argc > 2) ? std::stoi(argv[2]) : 2000;
-        double tol = (argc > 3) ? std::stod(argv[3]) : 1e-16;
-        int restart = (argc > 4) ? std::stoi(argv[4]) : 1000;
+
+        int max_iter_param = 2000;
+        double tol_param = 1e-12;
+        int restart_param = 500;
+
+        int max_iter = (argc > 2) ? std::stoi(argv[2]) : max_iter_param;
+        __PROMISE__ tol = (argc > 3) ? std::stod(argv[3]) : 1e-12;
+        int restart = (argc > 4) ? std::stoi(argv[4]) : restart_param;
 
         auto start = std::chrono::high_resolution_clock::now();
         result = gmres(A, b, max_iter, tol, restart);
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-        // Compute forward error
-        double forward_error = compute_forward_error(result.x, A.n);
+        __PROMISE__ forward_error = compute_forward_error(result.x, A.n);
 
         std::cout << "Matrix size: " << A.n << " x " << A.n << std::endl;
         std::cout << "Training time: " << duration.count() << " ms" << std::endl;
@@ -550,11 +519,19 @@ int main(int argc, char* argv[]) {
         std::cout << "Forward error (||x - x_true||): " << forward_error << std::endl;
         std::cout << "Iterations to converge: " << result.iterations << std::endl;
 
-        double* r = new double[A.n]();
+        double *check_solution = new __PROMISE__[A.n]();
+        if (!check_solution) throw std::runtime_error("Memory allocation failed");
+        for (int i = 0; i < A.n; ++i) {
+            check_solution[i] = result.x[i];
+        }
+
+        PROMISE_CHECK_ARRAY(check_solution, A.n);
+
+        __PROMISE__* r = new __PROMISE__[A.n]();
         if (!r) throw std::runtime_error("Memory allocation failed");
         matvec(A, result.x, r);
         axpy(-1.0, r, b, A.n, r);
-        double verify_residual = norm(r, A.n);
+        __PROMISE__ verify_residual = norm(r, A.n);
         std::cout << "Verification residual: " << verify_residual << std::endl;
         delete[] r;
 
@@ -563,10 +540,6 @@ int main(int argc, char* argv[]) {
             std::cout << "x[" << i << "] = " << result.x[i] << std::endl;
         }
 
-        // Update call to write_solution to include forward_error
-        write_solution(result.x, A.n, "gmres_solution.csv", 
-                      result.residual_history, result.residual_history_size, 
-                      forward_error);
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         free_csr_matrix(A);

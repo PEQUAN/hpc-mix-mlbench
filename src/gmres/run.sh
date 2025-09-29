@@ -1,2 +1,2 @@
-g++ pgmres_ilu.cpp -o pgmres
+g++ pgmres_lu.cpp -o pgmres
 ./pgmres

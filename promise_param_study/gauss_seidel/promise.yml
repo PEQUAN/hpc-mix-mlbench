@@ -1,7 +1,0 @@
-compile:
-- g++ gauss_seidel.cpp -frounding-math -m64 -o gauss_seidel.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
-
-run: gauss_seidel.out
-files: gauss_seidel.cpp
-log: gauss_seidel.log
-output: debug/

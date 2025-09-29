@@ -1,0 +1,7 @@
+compile:
+- g++ lu_sparse.cpp -frounding-math -m64 -o lu_sparse.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: lu_sparse.out
+files: lu_sparse.cpp
+log: lu_sparse.log
+output: debug/
