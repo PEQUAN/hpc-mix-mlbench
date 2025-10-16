@@ -205,7 +205,7 @@ Result bicgstab(const CSRMatrix& A, const double* b, int max_iter = 1000, double
         return {x_out, -1.0, 0, residual_history, 0};
     }
     std::cout << "Initial norm of b: " << initial_norm << std::endl;
-    double tol_abs = tol * initial_norm;
+    double tol_abs = tol;
 
     int k;
     for (k = 0; k < max_iter; ++k) {
@@ -354,7 +354,7 @@ void write_solution(const double* x, int n, const std::string& filename, const d
 }
 
 int main() {
-    std::string filename = "../data/suitesparse/1138_bus.mtx";
+    std::string filename = "../../data/suitesparse/psmigr_2.mtx";
     CSRMatrix A = read_mtx_file(filename);
     if (A.n == 0) {
         free_csr_matrix(A);
@@ -366,7 +366,7 @@ int main() {
     for (int i = 0; i < A.n; ++i) x_true[i] = 1.0; // x_true = [1, 1, ..., 1]
 
     auto start = std::chrono::high_resolution_clock::now();
-    Result result = bicgstab(A, b, 2 * A.n, 1e-8);
+    Result result = bicgstab(A, b, 2 * A.n, 1e-12);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 

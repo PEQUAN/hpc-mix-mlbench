@@ -11,7 +11,7 @@ struct CSRMatrix {
     __PROMISE__* values;
     int* col_indices;
     int* row_ptr;
-    int nnz; // number of non-zeros
+    int nnz; 
 };
 
 bool compare_by_column(const std::pair<int, __PROMISE__>& a, const std::pair<int, __PROMISE__>& b) {
@@ -132,12 +132,13 @@ __PROMISE__* axpy(__PROMISE__ alpha, const __PROMISE__* x, const __PROMISE__* y,
 
 __PROMISE__ norm(const __PROMISE__* v, int n) {
     __PROMISE__ d = dot(v, v, n);
+    if (isnan(d) || isinf(d)) return -1.0;
     return sqrt(d);
 }
 
 void compute_diagonal_preconditioner(const CSRMatrix& A, __PROMISE__* M) {
     bool has_zero_diagonal = false;
-    __PROMISE__ min_diag = 99999;
+    __PROMISE__ min_diag = std::numeric_limits<__PROMISE__>::max();
     __PROMISE__ max_diag = 0.0;
     for (int i = 0; i < A.n; ++i) {
         M[i] = 0.0;
@@ -204,7 +205,7 @@ Result bicgstab(const CSRMatrix& A, const __PROMISE__* b, int max_iter = 1000, _
         return {x_out, -1.0, 0, residual_history, 0};
     }
     std::cout << "Initial norm of b: " << initial_norm << std::endl;
-    __PROMISE__ tol_abs = tol * initial_norm;
+    double tol_abs = tol;
 
     int k;
     for (k = 0; k < max_iter; ++k) {
@@ -330,14 +331,13 @@ __PROMISE__* generate_rhs(const CSRMatrix& A) {
     __PROMISE__* x_true = new __PROMISE__[A.n];
     for (int i = 0; i < A.n; ++i) x_true[i] = 1.0; // x_true = [1, 1, ..., 1]
     __PROMISE__* b = matvec(A, x_true);
-    std::cout << "Generated b = A * x_true, where x_true = [1, 1, ..., 1]" << std::endl;
     delete[] x_true;
     return b;
 }
 
 
 int main() {
-    std::string filename = "1138_bus.mtx";
+    std::string filename = "psmigr_2.mtx";
     CSRMatrix A = read_mtx_file(filename);
     if (A.n == 0) {
         free_csr_matrix(A);
@@ -349,21 +349,19 @@ int main() {
     for (int i = 0; i < A.n; ++i) x_true[i] = 1.0; // x_true = [1, 1, ..., 1]
 
     auto start = std::chrono::high_resolution_clock::now();
-    Result result = bicgstab(A, b, 2 * A.n, 1e-8);
+    Result result = bicgstab(A, b, 2 * A.n, 1e-12);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    __PROMISE__* x_out = new __PROMISE__[A.n];
+    for (int i = 0; i < A.n; ++i) x_out[i] = result.x[i];
+    
+    PROMISE_CHECK_ARRAY(x_out, A.n);
 
     std::cout << "Matrix size: " << A.n << " x " << A.n << std::endl;
     std::cout << "Training time: " << duration.count() << " ms" << std::endl;
     std::cout << "Final preconditioned residual: " << result.residual << std::endl;
     std::cout << "Iterations to converge: " << result.iterations << std::endl;
-
-    double solution[A.n];
-    for (int i=0; i<A.n; i++){
-        solution[i] = result.x[i];
-    }
-
-    PROMISE_CHECK_ARRAY(solution, A.n);
 
     double* Ax = matvec(A, result.x);
     double* r_temp = axpy(-1.0, Ax, b, A.n);

@@ -376,7 +376,7 @@ Result gmres(const CSRMatrix& A, const __PROMISE__* b, int max_iter, __PROMISE__
     std::copy(b, b + n, r);
     __PROMISE__ initial_norm = norm(r, n);
     std::cout << "Initial norm of residual: " << initial_norm << std::endl;
-    __PROMISE__ tol_abs = 1e-16;// tol * std::max(initial_norm, 1e-16);
+    __PROMISE__ tol_abs = tol;// tol * std::max(initial_norm, 1e-16);
 
     int total_iterations = 0;
     while (total_iterations < max_iter) {
@@ -498,11 +498,11 @@ int main(int argc, char* argv[]) {
         std::cout << "A.n=" << A.n << ", A.nnz=" << A.nnz << std::endl;
 
 
-        int max_iter_param = 2000;
+        int max_iter_param = A.n;
         int restart_param = 500;
 
         int max_iter = (argc > 2) ? std::stoi(argv[2]) : max_iter_param;
-        __PROMISE__ tol = (argc > 3) ? std::stod(argv[3]) : 1e-8;
+        __PROMISE__ tol = (argc > 3) ? std::stod(argv[3]) : 1e-10;
         int restart = (argc > 4) ? std::stoi(argv[4]) : restart_param;
 
         auto start = std::chrono::high_resolution_clock::now();
