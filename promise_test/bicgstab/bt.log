@@ -1,6 +1,7 @@
-10/16 16:49:46: 🤘 cadnaPromise 🤘
-10/16 16:49:46: Using the compiler: g++
-10/16 16:49:46: We are working with 1 file and 114 different types
-10/16 16:49:46: The expectation is 100 digits.
-10/16 16:49:46: a) Get a reference result with cadna (double)
-10/16 16:49:50: ('The number of significant digits found with Cadna is lower than the expectation: ', 'Variable x_out: expect 100 and found 14')
+10/16 18:04:06: 🤘 cadnaPromise 🤘
+10/16 18:04:06: Using the compiler: g++
+10/16 18:04:06: We are working with 1 file and 114 different types
+10/16 18:04:06: The expectation is 3 digits.
+10/16 18:04:06: a) Get a reference result with cadna (double)
+10/16 18:04:11: b) Check with highest format (Double)
+10/16 18:04:12: c) Delta-Debug Single/Double

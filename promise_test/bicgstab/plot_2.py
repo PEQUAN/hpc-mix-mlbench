@@ -34,7 +34,7 @@ def run_experiments(method, digits):
             f'--precs={method}',
             f'--nbDigits={digit}',
             f'--conf=promise.yml',
-            '--noParsing',
+            
             '--fp=fp.json'
         ]
         start_time = time.time()

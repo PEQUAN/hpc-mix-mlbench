@@ -388,7 +388,7 @@ __PROMISE__* read_matrix_market(std::string& filename, int& n) {
 
 int main() {
     int n;
-    std::string matrix_file = "1138_bus.mtx";
+    std::string matrix_file = "psmigr_2.mtx";
     double kappa = 1e6; // Condition number (approximate or estimated)
     double tol = 1e-8;   // Tolerance for convergence slowing criterion
     

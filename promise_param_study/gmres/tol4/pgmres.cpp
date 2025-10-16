@@ -490,7 +490,7 @@ int main(int argc, char* argv[]) {
     Result result = {nullptr, 0.0, 0, nullptr, 0};
 
     try {
-        std::string filename = (argc > 1) ? argv[1] : "1138_bus.mtx";
+        std::string filename = (argc > 1) ? argv[1] : "psmigr_2.mtx";
 
         A = read_mtx_file(filename);
         b = generate_rhs(A);
