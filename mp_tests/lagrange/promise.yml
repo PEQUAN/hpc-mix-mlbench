@@ -1,0 +1,7 @@
+compile:
+- g++ lagrange.cpp -frounding-math -m64 -o lagrange.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: lagrange.out
+files: lagrange.cpp
+log: lagrange.log
+output: debug/

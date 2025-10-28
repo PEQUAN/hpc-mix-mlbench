@@ -1,0 +1,118 @@
+07/04 22:18:26: 🤘 cadnaPromise 🤘
+07/04 22:18:26: Using the compiler: g++
+07/04 22:18:26: We are working with 1 file and 7 different types
+07/04 22:18:26: The expectation is 1 digits.
+07/04 22:18:26: a) Get a reference result with cadna (double)
+07/04 22:18:29: euler3d_cpu.cpp: In function ‘int main(int, char**)’:
+euler3d_cpu.cpp:567:41: error: cannot convert ‘double*’ to ‘double_st*’ in initialization
+  567 |     double_st *variables = alloc<double>(nelr * NVAR);
+      |                            ~~~~~~~~~~~~~^~~~~~~~~~~~~
+      |                                         |
+      |                                         double*
+euler3d_cpu.cpp:570:45: error: cannot convert ‘double*’ to ‘double_st*’ in initialization
+  570 |     double_st *old_variables = alloc<double>(nelr * NVAR);
+      |                                ~~~~~~~~~~~~~^~~~~~~~~~~~~
+      |                                             |
+      |                                             double*
+euler3d_cpu.cpp:571:38: error: cannot convert ‘double*’ to ‘double_st*’ in initialization
+  571 |     double_st *fluxes = alloc<double>(nelr * NVAR);
+      |                         ~~~~~~~~~~~~~^~~~~~~~~~~~~
+      |                                      |
+      |                                      double*
+euler3d_cpu.cpp:572:44: error: cannot convert ‘double*’ to ‘double_st*’ in initialization
+  572 |     double_st *step_factors = alloc<double>(nelr);
+      |                               ~~~~~~~~~~~~~^~~~~~
+      |                                            |
+      |                                            double*
+euler3d_cpu.cpp:596:21: error: no matching function for call to ‘copy<double>(double_st*&, double_st*&, int)’
+  596 |         copy<double>(old_variables, variables, nelr * NVAR);
+      |         ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+euler3d_cpu.cpp:68:28: note: candidate: ‘void copy(T*, T*, int) [with T = double]’
+   68 | template <typename T> void copy(T *dst, T *src, int N) {
+      |                            ^~~~
+euler3d_cpu.cpp:68:36: note:   no known conversion for argument 1 from ‘double_st*’ to ‘double*’
+   68 | template <typename T> void copy(T *dst, T *src, int N) {
+      |                                 ~~~^~~
+In file included from /usr/include/c++/13/string:51,
+                 from /usr/include/c++/13/bits/locale_classes.h:40,
+                 from /usr/include/c++/13/bits/ios_base.h:41,
+                 from /usr/include/c++/13/ios:44,
+                 from /usr/include/c++/13/ostream:40,
+                 from /usr/include/c++/13/iostream:41,
+                 from /home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:26,
+                 from euler3d_cpu.cpp:1:
+/usr/include/c++/13/bits/stl_algobase.h:624:5: note: candidate: ‘template<class _II, class _OI> _OI std::copy(_II, _II, _OI)’
+  624 |     copy(_II __first, _II __last, _OI __result)
+      |     ^~~~
+/usr/include/c++/13/bits/stl_algobase.h:624:5: note:   template argument deduction/substitution failed:
+euler3d_cpu.cpp:596:22: note:   cannot convert ‘old_variables’ (type ‘double_st*’) to type ‘double’
+  596 |         copy<double>(old_variables, variables, nelr * NVAR);
+      |                      ^~~~~~~~~~~~~
+In file included from /usr/include/c++/13/bits/locale_facets.h:48,
+                 from /usr/include/c++/13/bits/basic_ios.h:37,
+                 from /usr/include/c++/13/ios:46:
+/usr/include/c++/13/bits/streambuf_iterator.h:339:5: note: candidate: ‘template<class _CharT> typename __gnu_cxx::__enable_if<std::__is_char<_Tp>::__value, std::ostreambuf_iterator<_CharT> >::__type std::copy(istreambuf_iterator<_CharT>, istreambuf_iterator<_CharT>, ostreambuf_iterator<_CharT>)’
+  339 |     copy(istreambuf_iterator<_CharT> __first,
+      |     ^~~~
+/usr/include/c++/13/bits/streambuf_iterator.h:339:5: note:   template argument deduction/substitution failed:
+/usr/include/c++/13/bits/streambuf_iterator.h: In substitution of ‘template<class _CharT> typename __gnu_cxx::__enable_if<std::__is_char<_Tp>::__value, std::ostreambuf_iterator<_CharT> >::__type std::copy(istreambuf_iterator<_CharT>, istreambuf_iterator<_CharT>, ostreambuf_iterator<_CharT>) [with _CharT = double]’:
+euler3d_cpu.cpp:596:21:   required from here
+/usr/include/c++/13/bits/streambuf_iterator.h:339:5: error: no type named ‘__type’ in ‘struct __gnu_cxx::__enable_if<false, std::ostreambuf_iterator<double, std::char_traits<double> > >’
+In file included from /usr/include/c++/13/algorithm:73,
+                 from /home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/half.hpp:245,
+                 from /home/xinye/.local/lib/python3.12/site-packages/cadnaPromise/cadna//include/cadna.h:35:
+/usr/include/c++/13/pstl/glue_algorithm_defs.h:134:1: note: candidate: ‘template<class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2> __pstl::__internal::__enable_if_execution_policy<_ExecutionPolicy, _ForwardIterator2> std::copy(_ExecutionPolicy&&, _ForwardIterator1, _ForwardIterator1, _ForwardIterator2)’
+  134 | copy(_ExecutionPolicy&& __exec, _ForwardIterator1 __first, _ForwardIterator1 __last, _ForwardIterator2 __result);
+      | ^~~~
+/usr/include/c++/13/pstl/glue_algorithm_defs.h:134:1: note:   candidate expects 4 arguments, 3 provided
+euler3d_cpu.cpp:626:21: error: cannot convert ‘double_st*’ to ‘double*’
+  626 |     dealloc<double>(areas);
+      |                     ^~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:63:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   63 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+euler3d_cpu.cpp:628:21: error: cannot convert ‘double_st*’ to ‘double*’
+  628 |     dealloc<double>(normals);
+      |                     ^~~~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:63:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   63 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+euler3d_cpu.cpp:630:21: error: cannot convert ‘double_st*’ to ‘double*’
+  630 |     dealloc<double>(variables);
+      |                     ^~~~~~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:63:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   63 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+euler3d_cpu.cpp:631:21: error: cannot convert ‘double_st*’ to ‘double*’
+  631 |     dealloc<double>(old_variables);
+      |                     ^~~~~~~~~~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:63:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   63 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+euler3d_cpu.cpp:632:21: error: cannot convert ‘double_st*’ to ‘double*’
+  632 |     dealloc<double>(fluxes);
+      |                     ^~~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:63:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   63 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+euler3d_cpu.cpp:633:21: error: cannot convert ‘double_st*’ to ‘double*’
+  633 |     dealloc<double>(step_factors);
+      |                     ^~~~~~~~~~~~
+      |                     |
+      |                     double_st*
+euler3d_cpu.cpp:63:39: note:   initializing argument 1 of ‘void dealloc(T*) [with T = double]’
+   63 | template <typename T> void dealloc(T *array) { delete[] array; }
+      |                                    ~~~^~~~~
+
+07/04 22:18:29: Compilation failed
+Is Cadna installed? Did you link your cade with Cadna with `-lcadnac`, `-L$CADNA_PATH/lib` and `-I$CADNA_PATH/include` ?

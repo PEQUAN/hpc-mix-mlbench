@@ -1,0 +1,7 @@
+compile:
+- g++ rf.cpp -frounding-math -m64 -o rf.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: rf.out
+files: rf.cpp
+log: rf.log
+output: debug/

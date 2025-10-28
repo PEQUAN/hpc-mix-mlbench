@@ -1,0 +1,7 @@
+compile:
+- g++ adaboost.cpp -frounding-math -m64 -o adaboost.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: adaboost.out
+files: adaboost.cpp
+log: adaboost.log
+output: debug/

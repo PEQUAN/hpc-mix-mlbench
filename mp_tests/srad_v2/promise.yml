@@ -1,0 +1,7 @@
+compile:
+- g++ srad.cpp -frounding-math -m64 -o srad.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: srad.out 2048 2048 0 127 0 127 2 0.5 2
+files: srad.cpp
+log: srad.cpp.log
+output: debug/

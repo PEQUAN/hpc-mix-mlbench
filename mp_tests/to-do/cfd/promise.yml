@@ -1,0 +1,7 @@
+compile:
+- g++ euler3d_cpu.cpp  -frounding-math -m64 -o euler3d_cpu.out -lcadnaOpenmpC -fopenmp  -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: euler3d_cpu.out fvcorr.domn.097K
+files: euler3d_cpu.cpp
+log: euler3d_cpu.log
+output: debug/

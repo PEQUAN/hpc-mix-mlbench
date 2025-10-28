@@ -1,0 +1,7 @@
+compile:
+- g++ rsvd.cpp -frounding-math -m64 -o rsvd.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: rsvd.out
+files: rsvd.cpp
+log: rsvd.log
+output: debug/

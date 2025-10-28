@@ -1,0 +1,7 @@
+compile:
+- g++ gaussian_nb.cpp -frounding-math -m64 -o gaussian_nb.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: gaussian_nb.out
+files: gaussian_nb.cpp
+log: gaussian_nb.log
+output: debug/

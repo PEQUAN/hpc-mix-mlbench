@@ -1,0 +1,7 @@
+compile:
+- g++ dbscan.cpp -frounding-math -m64 -o dbscan.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: dbscan.out
+files: dbscan.cpp
+log: dbscan.log
+output: debug/

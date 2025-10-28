@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -ue
+
+./hotspot 512 512 2 temp_512 power_512 output.txt

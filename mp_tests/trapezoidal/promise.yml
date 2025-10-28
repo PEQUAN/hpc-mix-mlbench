@@ -1,0 +1,7 @@
+compile:
+- g++ tpzd.cpp -frounding-math -m64 -o tpzd.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: tpzd.out
+files: tpzd.cpp
+log: tpzd.log
+output: debug/

@@ -1,0 +1,7 @@
+compile:
+- g++ simpson.cpp -frounding-math -m64 -o simpson.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: simpson.out
+files: simpson.cpp
+log: simpson.log
+output: debug/

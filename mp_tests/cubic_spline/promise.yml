@@ -1,0 +1,7 @@
+compile:
+- g++ cspline.cpp -frounding-math -m64 -o cspline.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: cspline.out
+files: cspline.cpp
+log: cspline.log
+output: debug/

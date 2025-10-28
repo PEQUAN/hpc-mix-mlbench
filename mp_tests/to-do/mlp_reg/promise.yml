@@ -1,0 +1,7 @@
+compile:
+- g++ mlp_reg.cpp -frounding-math -m64 -o mlp_reg.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: mlp_reg.out
+files: mlp_reg.cpp
+log: mlp_reg.log
+output: debug/

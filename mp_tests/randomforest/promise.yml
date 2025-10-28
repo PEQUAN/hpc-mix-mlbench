@@ -1,0 +1,7 @@
+compile:
+- g++ rf_reg.cpp -frounding-math -m64 -o rf_reg.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: rf_reg.out
+files: rf_reg.cpp
+log: rf_reg.log
+output: debug/

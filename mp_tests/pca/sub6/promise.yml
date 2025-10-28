@@ -1,0 +1,7 @@
+compile:
+- g++ pca.cpp -frounding-math -m64 -o pca.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: pca.out
+files: pca.cpp
+log: pca.log
+output: debug/

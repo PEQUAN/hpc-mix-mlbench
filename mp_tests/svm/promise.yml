@@ -1,0 +1,7 @@
+compile:
+- g++ svm_reg.cpp -frounding-math -m64 -o svm_reg.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: svm_reg.out
+files: svm_reg.cpp
+log: svm_reg.log
+output: debug/

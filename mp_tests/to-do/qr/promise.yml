@@ -1,0 +1,7 @@
+compile:
+- g++ practical_qr.cpp -frounding-math -m64 -o practical_qr.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: practical_qr.out
+files: practical_qr.cpp
+log: practical_qr.log
+output: debug/

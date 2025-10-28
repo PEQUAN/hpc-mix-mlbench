@@ -1,0 +1,7 @@
+compile:
+- g++ dct_reg.cpp -frounding-math -m64 -o dct_reg.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: dct_reg.out
+files: dct_reg.cpp
+log: dct_reg.log
+output: debug/
