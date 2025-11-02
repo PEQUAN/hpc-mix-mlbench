@@ -268,21 +268,45 @@ def plot_precision_settings(precision_settings, digits, runtimes):
     print("Plot saved as precision2_with_runtime.png")
     plt.show()
 
+import sys
+
 if __name__ == "__main__":
-    method = 'whsd'
+    method = 'chsd'
     digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
+    # Default behavior: run both if no args provided
+    run_experiments_flag = True
+    run_plot_flag = True
 
-    # precision_settings, runtimes = run_experiments(method, digits)
-    # save_precision_settings(precision_settings)
-    # save_runtimes_to_csv(digits, runtimes)
-    
-    loaded_settings = load_precision_settings()
-    loaded_runtimes = load_runtimes()
+    # Parse command-line arguments
+    if len(sys.argv) > 1:
+        run_experiments_flag = sys.argv[1].lower() in ['1', 'true', 'yes', 't', 'y']
+    if len(sys.argv) > 2:
+        run_plot_flag = sys.argv[2].lower() in ['1', 'true', 'yes', 't', 'y']
 
-    if len(loaded_settings) != len(digits):
-        print(f"Error: Loaded precision settings length ({len(loaded_settings)}) does not match digits ({len(digits)})")
-    elif len(loaded_runtimes) != len(digits):
-        print(f"Error: Loaded runtimes length ({len(loaded_runtimes)}) does not match digits ({len(digits)})")
+    # --- Run experiments and save ---
+    if run_experiments_flag:
+        print("Running experiments...")
+        precision_settings, runtimes = run_experiments(method, digits)
+        save_precision_settings(precision_settings)
+        save_runtimes_to_csv(digits, runtimes)
+        print("Experiments completed and saved.")
     else:
+        print("Skipping experiment execution.")
+
+    # --- Load data and plot ---
+    if run_plot_flag:
+        print("Loading data and generating plots...")
+        loaded_settings = load_precision_settings()
+        loaded_runtimes = load_runtimes()
         plot_precision_settings(loaded_settings, digits, loaded_runtimes)
+        print("Plotting completed.")
+    else:
+        print("Skipping plotting.")
+
+    #if len(loaded_settings) != len(digits):
+    #    print(f"Error: Loaded precision settings length ({len(loaded_settings)}) does not match digits ({len(digits)})")
+    #elif len(loaded_runtimes) != len(digits):
+    #    print(f"Error: Loaded runtimes length ({len(loaded_runtimes)}) does not match digits ({len(digits)})")
+    #else:
+    #    plot_precision_settings(loaded_settings, digits, loaded_runtimes)
