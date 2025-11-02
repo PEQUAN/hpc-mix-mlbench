@@ -33,7 +33,7 @@ def run_experiments(method, digits):
             f'--precs={method}',
             f'--nbDigits={digit}',
             f'--conf=promise.yml',
-            '--noParsing',
+            
             '--fp=fp.json'
         ]
         start_time = time.time()
@@ -241,24 +241,28 @@ def plot_precision_settings(precision_settings, digits, runtimes):
 
     ax.set_ylim(0, max(np.sum([heights[cat] for cat in active_categories], axis=0)) * 1)
     ax2.set_ylim(0, max(runtimes) * 1.5 if runtimes else 1.0)  # Adjust for visibility
-    
+
     ax.set_xticks(x_indices)
     ax.set_xticklabels(digits)
 
     ax.set_xlim(-0.5, len(digits) - 0.5)
 
-    ax.set_xlabel('Number of required digits', fontsize=16, weight='bold')
-    ax.set_ylabel('Number of variables of each type', fontsize=16, weight='bold')
-    ax2.set_ylabel('Runtime (seconds)', fontsize=16, weight='bold', color='red')
+    ax.set_xlabel('Number of required digits', fontsize=20, weight='bold')
+    ax.set_ylabel('Number of variables of each type', fontsize=20, weight='bold')
+    ax2.set_ylabel('Runtime (seconds)', fontsize=20, weight='bold', color='red')
     ax2.tick_params(axis='y', labelcolor='red')
-    ax.set_title('Precision Settings Distribution with Runtime', fontsize=16, weight='bold', pad=20)
+
+    ax.tick_params(axis='both', which='major', labelsize=20)   # for main x/y ticks
+    ax2.tick_params(axis='both', which='major', labelsize=22)  # for twin y-axis ticks
+
+    ax.set_title('Precision Settings Distribution with Runtime (IV)', fontsize=20, weight='bold', pad=20)
     ax.grid(True, axis='y', linestyle='--', alpha=0.7)
     
     # Create legend with explicit order: bars in active_categories order, then runtime
     legend_handles = bar_handles + [runtime_line]
     legend_labels = bar_labels + ['Runtime']
-    ax.legend(legend_handles, legend_labels, loc='upper center', bbox_to_anchor=(0.5, 1.15),
-              ncol=min(len(active_categories) + 1, 6), fontsize=15, frameon=True, edgecolor='black')
+    ax.legend(legend_handles, legend_labels, loc='upper center', bbox_to_anchor=(0.5, 1.2),
+              ncol=min(len(active_categories) + 1, 6), fontsize=20, frameon=True, edgecolor='black')
 
     plt.tick_params(axis='both', which='major', labelsize=15)
     plt.tight_layout()
