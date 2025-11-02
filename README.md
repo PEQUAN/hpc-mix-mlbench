@@ -28,6 +28,9 @@ project/
 │   ├── plot_3.py
 │   ├── plot_4.py
 │   ├── precision_settings_1.json   ← required (generated or pre-existing)
+│   ├── precision_settings_2.json   ← required (generated or pre-existing)
+│   ├── precision_settings_3.json   ← required (generated or pre-existing)
+│   ├── precision_settings_4.json   ← required (generated or pre-existing)
 │   └── promise.yml                 ← required (generated or pre-existing)
 ├── exp_set2/
 │   └── (same files as above)
@@ -38,7 +41,7 @@ project/
 
 > **Each valid folder must contain**:
 > - `plot_1.py`, `plot_2.py`, `plot_3.py`, `plot_4.py`
-> - `precision_settings_1.json`
+> - `precision_settings_1.json`, `precision_settings_2.json`, `precision_settings_3.json`, `precision_settings_4.json`
 > - `promise.yml`
 
 ---
