@@ -9,7 +9,7 @@ To run the mixed-precision benchmarks by PROMISE, one need to go to the folder `
 cd mp_tests
 ```
 
-A **Bash automation script** to run `plot_1.py` to `plot_4.py` across multiple experiment folders, with support for:
+A **Bash automation script** to run `run_setting_1.py` to `run_setting_4.py` across multiple experiment folders, with support for:
 
 - Running **experiments** (`precision_settings_1.json`, `promise.yml`)
 - **Plotting** results
@@ -23,10 +23,10 @@ The folder structure:
 ```text
 project/
 ├── exp_set1/
-│   ├── plot_1.py
-│   ├── plot_2.py
-│   ├── plot_3.py
-│   ├── plot_4.py
+│   ├── run_setting_1.py
+│   ├── run_setting_2.py
+│   ├── run_setting_3.py
+│   ├── run_setting_4.py
 │   ├── precision_settings_1.json   ← required (generated or pre-existing)
 │   ├── precision_settings_2.json   ← required (generated or pre-existing)
 │   ├── precision_settings_3.json   ← required (generated or pre-existing)
@@ -40,7 +40,7 @@ project/
 
 
 > **Each valid folder must contain**:
-> - `plot_1.py`, `plot_2.py`, `plot_3.py`, `plot_4.py`
+> - `run_setting_1.py`, `run_setting_2.py`, `run_setting_3.py`, `run_setting_4.py`
 > - `precision_settings_1.json`, `precision_settings_2.json`, `precision_settings_3.json`, `precision_settings_4.json`
 > - `promise.yml`
 
@@ -99,7 +99,7 @@ In the end, one can quickly check their visualization in the plots folder via:
 
 ```bash
 cd mp_tests
-bash move_plots.sh 
+bash organize_plots.sh
 ```
 
 ### Generate Summary
