@@ -77,22 +77,15 @@ chmod +x run_benchmarks.sh
 
 | 🖥️ **Command** | 📘 **Description** |
 |:----------------|:------------------|
-| `./run_benchmarks.sh` | 🧪 Run **experiments + plots** in all valid folders *(default)* |
+| `./run_benchmarks.sh` | 🧪 Run **experiments + plots** **sequential** in all valid folders *(default)* |
 | `./run_benchmarks.sh 1 0` | ⚙️ Run **only experiments** (skip plots) in all folders |
 | `./run_benchmarks.sh 0 1` | 📊 Run **only plots** (uses saved data) in all folders |
-| `./run_benchmarks.sh 1 1 setA setB` | 🎯 Run **both** in only `setA` and `setB` |
-| `./run_benchmarks.sh n y exp_set1` | 🧩 Skip experiments, **plot only** in `exp_set1` *(short form)* |
-| `./run_benchmarks.sh false true results/v1 results/v3` | 🎨 Plot only in **two specific folders** (`results/v1`, `results/v3`) |
+| `./run_benchmarks.sh 1 1 setA setB` | 🎯 **Sequential:** run **both** in only `setA` and `setB` |
+| `./run_benchmarks.sh n y setA` | 🧩 Skip experiments, **plot only** in `setA` *(short form)* |
+| `./run_benchmarks.sh 0 1 --parallel` | ⚡ **Parallel:** runs **plots only** in all folders. |
+| `./run_benchmarks.sh 1 1 setA setB --parallel` | 🔀 **Parallel:** runs **experiments + plots** only in `setA` and `setB`. |
 
 
-It also supports parallelism:
-
-| 💻 **Command** | ⚙️ **What It Does** |
-|:----------------|:--------------------|
-| `./run_benchmarks_parallel.sh` | ▶️ **Sequential:** runs **experiments + plots** in all folders. |
-| `./run_benchmarks_parallel.sh 0 1 --parallel` | ⚡ **Parallel:** runs **plots only** in all folders. |
-| `./run_benchmarks_parallel.sh 1 1 folderA folderB --parallel` | 🔀 **Parallel:** runs **experiments + plots** only in `folderA` and `folderB`. |
-| `./run_benchmarks_parallel.sh n y sub1 sub2` | 🧩 **Sequential:** runs **plots only** in `sub1` and `sub2`. |
 
 
 > 💡 **Tip:**  
