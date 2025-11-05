@@ -1,4 +1,4 @@
-# MIX-HPC-ML benchmarks
+# HPC-MIX benchmarks
 
 
 ## Benchmark Run
