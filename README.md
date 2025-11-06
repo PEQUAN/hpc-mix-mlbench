@@ -22,7 +22,7 @@ The folder structure:
 
 ```text
 project/
-├── Numerical Algorithm 2/
+├── Numerical Algorithm 1/
 │   ├── run_setting_1.py
 │   ├── ......
 │   ├── run_setting_k.py
