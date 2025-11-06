@@ -1,0 +1,1 @@
+g++ check.cpp -o check -I. -L.

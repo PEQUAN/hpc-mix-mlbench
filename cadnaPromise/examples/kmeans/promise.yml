@@ -1,0 +1,7 @@
+compile:
+- g++ kmeans.c getopt.c evaluate.c -frounding-math -m64 -o test -lcadnaOpenmpC -fopenmp  -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: ./test -i kdd_cup
+files: kmeans.c, kmeans.h, getopt.c, evaluate.c, unistd.h 
+log: kmeans.log
+output: debug/

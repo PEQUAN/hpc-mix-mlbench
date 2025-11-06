@@ -1,0 +1,8 @@
+compile:
+- g++ test_parsing.c -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+run: a.out
+files: test_parsing.c
+nbDigits: 8
+custom:
+  float: F32
+  double: F64

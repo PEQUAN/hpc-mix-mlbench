@@ -1,0 +1,8 @@
+compile:
+-  g++ mock_test_pro.cc -o mock_test_pro -lcadnaOpenmpC -fopenmp  -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: mock_test_pro 1.21321 1.21492465
+files: mock_test_pro.cc
+log: mock_test.log
+output: debug/
+

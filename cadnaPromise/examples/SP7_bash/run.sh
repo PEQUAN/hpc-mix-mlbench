@@ -1,0 +1,1 @@
+g++ R3.cc -frounding-math -m64 -o R3.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include

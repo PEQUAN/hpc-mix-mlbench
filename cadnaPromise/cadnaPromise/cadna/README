@@ -1,0 +1,94 @@
+CADNA software
+
+Sorbonne Université
+LIP6 Laboratory
+PEQUAN Team
+
+----------------------------------------------------------
+Generated libraries:
+
+This package generates libraries that enable one to use CADNA in a numerical code.
+The following libraries can be created.
+libcadnaC.a: optimized version of CADNA for C/C++ codes
+libcadnaCdebug.a: version of CADNA for debugging in C/C++ codes
+libcadnaOpenmpC.a: optimized version of CADNA for C/C++ codes that use OpenMP
+libcadnaOpenmpCdebug.a: version of CADNA for debugging in C/C++ codes that use OpenMP
+libcadnaMPIC.a: MPI extension for CADNA C/C++ codes
+libcadnaMPICdebug.a: MPI extension for debugging in CADNA C/C++ codes
+libcadnaMPICforOpenMP.a: MPI extension for CADNA C/C++ codes that use OpenMP
+libcadnaMPICdebugforOpenMP.a: MPI extension for debugging in CADNA C/C++ codes that use OpenMP
+libcadnaFortran.a: library to enable the use of CADNA in Fortran codes
+libcadnaMPIFortran.a: MPI extension for CADNA Fortran codes
+
+
+Examples are provided for each case in the following directories.
+examplesC
+examplesC_mpi
+examplesC_mpiomp
+examplesC_omp
+examplesFortran
+examplesFortran_mpi
+----------------------------------------------------------
+Installation:
+
+The configure script automatically detects if CADNA versions compatible with OpenMP and MPI can be generated.
+The m4 macro processor, that is used to this purpose, should be installed. 
+To generate the Fortran version of CADNA, the  --enable-fortran option must be used when executing the configure script.
+Examples of calls to the configure script are given below.
+
+./configure CXX=YourC++Compiler 
+./configure --prefix=TheInstallationDirectory
+./configure CXX=YourC++Compiler  --prefix=TheInstallationDirectory 
+./configure --prefix=`pwd` --enable-fortran
+
+Macos 
+Brew gcc/7.3.0_1 (gcc, g++, gfortran)
+./configure --prefix=`pwd` CC=gcc-7 CXX=g++-7 --enable-fortran
+./configure --prefix=`pwd` CC=clang CXX=clang++ OPENMP_CFLAGS="-I/usr/local/Cellar/libomp/5.0.1/include -Xclang -fopenmp" OPENMP_CXXFLAGS="-I/usr/local/Cellar/libomp/5.0.1/include -Xclang -fopenmp" OPENMP_LDFLAGS="-L/usr/local/Cellar/libomp/5.0.1/lib -lomp"
+./configure --prefix=`pwd` CC=clang CXX=clang++ OPENMP_CFLAGS="-I/usr/local/Cellar/libomp/7.0.0/include -Xclang -fopenmp" OPENMP_CXXFLAGS="-I/usr/local/Cellar/libomp/7.0.0/include -Xclang -fopenmp" OPENMP_LDFLAGS="-L/usr/local/Cellar/libomp/7.0.0/lib -lomp"
+On OSX gcc may be a wrapper for clang. In that case you can use:
+./configure --prefix=`pwd` CC=clang CXX=clang++
+
+With IBM compilers, both  -libmc++ and  -lstdc++ must be mentioned when you use CADNA in a Fortran code.
+You can specify it with a configure command such as:  
+./configure CC=xlc  CXX=xlc++ FC=xlf FCFLAGS="-L/The_Path_To_libmc++  -libmc++  -lstdc++ " --enable-fortran
+
+To support the half precision with the half.hpp package use "enable-half-emulation".
+Example:
+./configure CXX=YourC++Compiler  --prefix=TheInstallationDirectory --enable-half-emulation
+
+To support the half precision by the armv8.2 architecture which supports half-precision natively use "enable-half-native"
+Example:
+./configure CXX=YourC++Compiler  --prefix=TheInstallationDirectory --enable-half-native
+
+To enable the use of FMA use "enable-fma"
+Example:
+./configure CXX=YourC++Compiler  --prefix=TheInstallationDirectory  --enable-fma
+
+It might be interesting to use 2 shell variables to specify the compiler to be used with MPI:
+export OMPI_CC=gcc-7
+export OMPI_CXX=g++-7
+
+Compilers are supposed to be 64-bit compilers, otherwise specify --enable-32bit   
+
+After the execution of the configuration script, type:
+make install
+
+Then, to compile and execute some test examples, go to any example directory, and just do:
+make clean 
+make
+
+----------------------------------------------------------
+Restrictions:
+
+- The configuration script supports clang, GNU compilers (g++, gfortran),
+INTEL compilers (icpc, ifort), IBM compilers (xlc, xlf), and PGI compilers.
+
+- This CADNA package cannot be used in Fortran codes OpenMP.
+
+- With clang, the libcadnaOpenmpCdebug.a must be used for OpenMP C/C++ codes,
+although the libcadnaOpenmpC.a library is also generated. 
+
+- You should not compile CADNA in parallel because of the dependencies between CADNA source files.
+To compile CADNA, do not use a command such as:
+make -j NumberOfParallelProcesses

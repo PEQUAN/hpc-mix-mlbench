@@ -1,0 +1,374 @@
+#!/usr/bin/perl
+
+#Copyright 2009 Jean-Luc LAMOTTE, Anthony RAMINE
+#Univ. P. et M. Curie, Paris, France
+# 
+#
+# Updated by Xinye Chen (ocrid: 0000-0003-1778-393X) in 2025 -- fix the bugs of Type Specifier Matching
+# The new version ensure the conversion of type proceed properly
+#
+#
+# For example, the input C file:
+# --------------------------------------
+#double cal_double(float a, float b){
+#    return a + b;
+#}
+#double cal_float(float a, float b){
+#    return a + b;
+#}
+#int main() {
+#    float a = 3.f;
+#    float b = a + 4.0;
+#    double c = cal(a, b);
+#    return 0;
+#}
+# --------------------------------------
+# Now can be properly converted into
+#
+# --------------------------------------
+# #include <cadna.h>
+# using namespace std;
+# 
+# double_st cal_double(float_st a, float_st b){
+#     return a + b;
+# }
+# 
+# 
+# 
+# double_st cal_float(float_st a, float_st b){
+#     return a + b;
+# }
+# 
+# int main() {
+#     cadna_init(0);
+# 
+#     float_st a = 3.f;
+#     float_st b = a + 4.0;
+#     double_st c = cal(a, b);
+#     return 0;
+#     cadna_end();
+# 
+# }
+# --------------------------------------
+#
+# The previous one will get the wrong function names: cal_float_st and cal_double_st
+#
+#
+#This file is part of CADNAIZER.
+#
+#    CADNAIZER is free software: you can redistribute it and/or modify it
+#    under the terms of the GNU Lesser General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    CADNAIZER is distributed in the hope that it will be useful, but WITHOUT
+#    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+#    or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+#    Public License for more details.
+#
+#    You should have received a copy of the GNU Lesser General Public
+#    License along with CADNAIZER. If not, see
+#    <http://www.gnu.org/licenses/>.
+#
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long qw(:config bundling permute);
+use Pod::Usage;
+
+my $output;
+my $debug;
+my $help;
+
+pod2usage 2
+    unless (GetOptions(
+        'output|o=s'    => \$output,
+        'debug|d'       => \$debug,
+        'help|h'        => \$help
+    ));
+
+pod2usage 1 if ($help);
+
+die "An output file must be specified to enable debug output.\n"
+    if ($debug && !$output);
+
+if ($output) {
+    die "File could not be created: $!"
+        unless (open OUTPUT, ">", $output);
+} else {
+    *OUTPUT = *STDOUT;
+}
+
+my $s = '';
+$s .= $_ while (<>);
+
+die "Input is empty."
+    if ($s !~ m/\S/);
+
+$_ = $s;
+
+my %fmt_funcs = (
+    asprintf    => 2,
+    fprintf     => 2,
+    printf      => 1,
+    snprintf    => 3,
+    sprintf     => 2,
+);
+
+my $l = 1;
+my $c = 1;
+
+my $level = 0;
+my $main_waiting_for_start = 0;
+my $main_waiting_for_end;
+
+my $expr_level;
+my $fmt_waiting_for_start = 0;
+my $fmt_string_arg;
+my @fmt_float_args;
+my $fmt_current_arg = 0;
+
+# The following variable is used to keep trace of the indentation style when
+# reading the code of the main function to insert the cadna_end() call.
+my $indent = '';
+
+sub debug {
+    print "$l,$c:\t", @_, "\n" if ($debug);
+}
+
+sub w {
+    print OUTPUT @_;
+}
+
+sub upd {
+    my $s = $_[0];
+    my $lines = ($s =~ s/\n/$&/g);
+    if ($lines) {
+        $l += $lines;
+        $c = 1;
+    }
+    $s =~ m/.*$/g;
+    $c += length $&;
+}
+
+debug 'Include CADNA header at beginning of file.';
+w "#include <cadna.h>\n"; 
+w "using namespace std;\n";
+w "\n";
+
+LOOP:
+{
+    # If we encounter a ';' while waiting for the start of the main function code
+    # or the arguments of a printf family call, it means we were not actually reading
+    # the main function definition or a printf family call.
+    # This case could happen if we are reading the main declaration or a reference to
+    # a printf function:
+    #   main(int argc, char *argv);
+    #   func = &printf;
+
+    if (($main_waiting_for_start || $fmt_waiting_for_start) && m/\G;/cg) {
+        if ($main_waiting_for_start) {
+            $main_waiting_for_start = 0;
+            debug 'A semicolon was found while waiting for the body of the main function.';
+        } else {
+            $fmt_waiting_for_start = 0;
+            debug 'A semicolon was found while waiting for the arguments list of a printf function.';
+        }
+        w $&;
+        upd $&; redo LOOP;
+    }
+
+    # Code for the insertion of the cadna_end() call.
+    if ($main_waiting_for_end) {
+        if ($level == 1 && m/\G\s*\}/cg) {
+            $main_waiting_for_end = 0;
+            $level--;
+
+            debug 'Found end of main function body, inserting cadna_end() call.';
+            w "\n\n", $indent, "cadna_end();", $&;
+            upd $&; redo LOOP;
+        }
+
+        if (m/\G((?:[ \t]*\n)+)([ \t]*)/cg) {
+            w $1; upd $1;
+            debug "Found new indent for cadna_end() call: '$2'.";
+            $indent = $2;
+            w $2; upd $2;
+            redo LOOP;
+        }
+    }
+
+    # Code executed when entering the args of a printf family call.
+    if ($fmt_waiting_for_start && m/\G\(/cg) {
+        $fmt_waiting_for_start = 0;
+        $fmt_current_arg = 1;
+        @fmt_float_args = ();
+        $expr_level = 1;
+
+        debug 'Found arguments list of a printf function.';
+        w $&;
+        upd $&; redo LOOP;
+    }
+
+    # Code executed when reading the arguments of a wf family call.
+    if ($fmt_current_arg) {
+        if (m/\G\(\s*/cg) {
+            ++$expr_level;
+            w $&; upd $&; redo LOOP;
+        }
+        if (m/\G\)/cg) {
+            if (--$expr_level == 0) {
+                if (grep $_ eq $fmt_current_arg, @fmt_float_args) {
+                    w ')';
+                    debug "Found end of printf float argument (number $fmt_current_arg).";
+                }
+                debug 'Found end of arguments list of a printf function.';
+                $fmt_current_arg = 0;
+            }
+
+            w $&;
+            upd $&; redo LOOP;
+        }
+
+        if ($expr_level == 1) {
+            if (m/\G\s*,\s*/cg) {
+                if (grep $_ eq $fmt_current_arg, @fmt_float_args) {
+                    debug "Found end of printf float argument (number $fmt_current_arg).";
+                    w ')';
+                }
+                $fmt_current_arg++;
+
+                w $&;
+                upd $&;
+                if (grep $_ eq $fmt_current_arg, @fmt_float_args) {
+                    debug "Found beginning of printf float argument (number $fmt_current_arg).";
+                    w 'strp(';
+                }
+                redo LOOP;
+            }
+
+            if ($fmt_current_arg == $fmt_string_arg) {
+                if (m/\G"[^"\\]*(?:\\.[^"\\]*)*"/cg) {
+                    debug 'Found format argument of a printf function.';
+                    my $s = $&;
+                    my $i = $fmt_current_arg;
+                    while ($s =~ m/\G([^%]*(?:%%[^%])*)(%[^diouXxfeEgGbcs]*([diouXxfeEgGbcs]))/cg) {
+                        upd $1;
+                        ++$i;
+                        if ((index 'feEgG', $3) != -1) {
+                            debug "Argument $i is a float.";
+                            push @fmt_float_args, $i;
+                            w $1, '%s';
+                        } else {
+                            w $&;
+                        }
+                        upd $2;
+                    }
+                    $s =~ m/\G.*/cg;
+
+                    w $&;
+                    upd $&;
+                    redo LOOP;
+                }
+
+                $fmt_current_arg = undef;
+                redo LOOP;
+            }
+        }
+    }
+
+    # Blanks
+    (w $&), (upd $&), redo LOOP if (m/\G\s+/cg);
+
+    # Singleline comments
+    if (m{\G//.*}cg) {
+        debug 'Found singleline comment.';
+        w $&; upd $&; redo LOOP 
+    }
+
+    # Multiline comments
+    if (m{\G/\*[^*]*(?:\*[^/][^*]*)*\*/}cg) {
+        debug 'Found multiline comment.';
+        w $&; upd $&; redo LOOP 
+    }
+
+    # String
+    if (m/\G"[^"\\]*(?:\\.[^"\\]*)*"/cg) {
+        debug 'Found string.';
+        w $&; upd $&; redo LOOP 
+    }
+
+    # Blocks
+    if (m/\G\{/cg) {
+        $level++;
+        debug "Entering level $level.";
+
+        upd $&;
+        w '{';
+
+        # Code for the cadna_init call insertion.
+        if ($main_waiting_for_start) {
+            debug 'Found beginning of main function body, inserting cadna_init(0) call.';
+            $main_waiting_for_start = 0;
+            $main_waiting_for_end = 1;
+            $indent = '';
+
+            m/\G(?:[ \t]*\n)*([ \t]*)/cg;
+            upd $&;
+            w $&, 'cadna_init(0);', "\n\n", $1;
+        }
+
+        redo LOOP;
+    }
+
+    if (m/\G\}/cg) {
+        debug "Leaving level $level.";
+        $level--;
+        w $&;
+        upd $&; redo LOOP;
+    }
+
+    # Words
+    if (m/\G\b(?:double|float|half)\b(?=\s*(?:[\*\[&\)]|\s|$))/cg) {
+        # Types double, float, and half
+        debug "Transforming type $&.";
+        w "$&_st";
+        upd $&; redo LOOP;
+    } elsif (m/\G[a-z]+\b(?![:;._])/cg) {
+        # Other words
+        if (exists $fmt_funcs{$&}) {
+            # Format functions
+            debug "Found format function $&.";
+            $fmt_waiting_for_start  = 1;
+            $fmt_string_arg         = $fmt_funcs{$&};
+            w $&;
+        } else {
+            if ($level == 0 && $& eq 'main') {
+                debug "Found main function.";
+                $main_waiting_for_start = 1;
+            }
+            w $&;
+        }
+        upd $&; redo LOOP;
+    }
+
+    # Anything else.
+    # Proceed char by char to not miss anything.
+    (w $&), (upd $&), redo LOOP if m/\G./cg;
+};
+
+=head1 NAME
+
+cadnaizer - CADNAize your C code
+
+=head1 SYNOPSIS
+
+cadnaizer [options] [file ...]
+
+ Options:
+  -d, --debug               enable debug output
+  -o, --output filename     write cadnaized code in filename
+  -h, --help                Print this message
+
+=cut

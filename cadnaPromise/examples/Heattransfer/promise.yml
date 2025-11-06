@@ -1,0 +1,8 @@
+compile:
+- g++ HeatTransfer.cc -O3 -frounding-math -m64 -o HeatTransfer.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: HeatTransfer.out
+files: HeatTransfer.cc
+nbDigits: 12
+log: HeatTransfer.log
+output: debug/

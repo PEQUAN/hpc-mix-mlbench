@@ -1,0 +1,7 @@
+compile:
+- g++ R2.cc -O1 -frounding-math -m64 -o R2.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: R2.out
+files: R2.cc
+log: R2.log
+output: debug/

@@ -1,0 +1,6 @@
+include cadnaPromise/extra/*
+include README.rst
+include cadnaPromise/cadna/*
+include cadnaPromise/cadna/include/*
+include cadnaPromise/cadna/lib/*
+include cadnaPromise/cache/*

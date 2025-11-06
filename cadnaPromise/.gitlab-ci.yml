@@ -1,0 +1,92 @@
+image: python:3.12
+
+
+stages:
+  - documentation
+  - unit_tests
+
+
+
+# install and activate the virtual env
+before_script:
+  - apt-get update -qy
+  - apt-get dist-upgrade -y
+  - apt-get install -y sshpass
+  - pip3 install --upgrade pip setuptools
+  - pip3 install virtualenv
+  - virtualenv -p `which python3` .virtualenv/promise2
+  - source .virtualenv/promise2/bin/activate
+
+
+
+
+# Unit tests
+job:test:
+  stage: unit_tests
+  script:
+    - apt-get update -qy
+    - apt-get install -y g++ rsync
+    - pip install setuptools
+    - pip list
+    - pip install .
+    - pip install pytest pytest-cov
+    - cd cadnaPromise/cadna/ 
+    - bash run_unix.sh # built-in installation
+    - cd ../..
+    - export CADNA_PATH=`pwd`/cadnaPromise/cadna/
+    - cd examples/
+    - pytest --show-capture=no --verbosityLog=4 --tb=short -vv --disable-warnings --cov cadnaPromise --cov-report html --cov-report term
+    - cd ..
+  coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
+  artifacts:
+    when: always
+    paths:
+      - examples/*
+      - examples/htmlcov
+    expire_in: 2 weeks
+
+
+
+
+# template used for the documentation jobs
+.documentation:
+  stage: documentation
+  only:
+    changes:
+    - docs/**/*
+    - .gitlab-ci.yml
+  allow_failure: true
+
+
+# Generate HTML documentation
+job:HTML:
+  extends: .documentation
+  script:
+    # install Promose with sphinx
+    - pip install ".[with_doc]"
+    # make HTML doc
+    - cd docs/
+    - make html
+    - cd ..
+  artifacts:
+    paths:
+      - docs/build/html/*
+
+
+# generate pdf documentation
+job:PDF:
+  extends: .documentation
+  script:
+    # install Promise with sphinx
+    - pip install ".[with_doc]"
+    - cd docs/
+    # install minimal LaTeX
+    - apt-get update -qy
+    - apt-get -y install texlive-latex-recommended latexmk texlive-fonts-recommended texlive-science texlive-formats-extra
+    - make latexpdf
+    - cd ..
+  artifacts:
+    paths:
+      - docs/build/latex/promisev2.pdf
+
+
