@@ -11,7 +11,7 @@ cd mp_tests
 
 A **Bash automation script** to run `run_setting_1.py` to `run_setting_4.py` across multiple experiment folders, with support for:
 
-- Running **experiments** (`precision_settings_1.json`, `promise.yml`)
+- Running **experiments** (`prec_setting_1.json`, `promise.yml`)
 - **Plotting** results
 - Selective execution of **specific folders**
 
@@ -27,10 +27,10 @@ project/
 │   ├── run_setting_2.py
 │   ├── run_setting_3.py
 │   ├── run_setting_4.py
-│   ├── precision_settings_1.json   ← required (generated or pre-existing)
-│   ├── precision_settings_2.json   ← required (generated or pre-existing)
-│   ├── precision_settings_3.json   ← required (generated or pre-existing)
-│   ├── precision_settings_4.json   ← required (generated or pre-existing)
+│   ├── prec_setting_1.json   ← required (generated or pre-existing)
+│   ├── prec_setting_2.json   ← required (generated or pre-existing)
+│   ├── prec_setting_3.json   ← required (generated or pre-existing)
+│   ├── prec_setting_4.json   ← required (generated or pre-existing)
 │   └── promise.yml                 ← required (generated or pre-existing)
 ├── exp_set2/
 │   └── (same files as above)
@@ -41,7 +41,7 @@ project/
 
 > **Each valid folder must contain**:
 > - `run_setting_1.py`, `run_setting_2.py`, `run_setting_3.py`, `run_setting_4.py`
-> - `precision_settings_1.json`, `precision_settings_2.json`, `precision_settings_3.json`, `precision_settings_4.json`
+> - `prec_setting_1.json`, `prec_setting_2.json`, `prec_setting_3.json`, `prec_setting_4.json`
 > - `promise.yml`
 
 ---
