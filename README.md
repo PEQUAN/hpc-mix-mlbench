@@ -17,12 +17,12 @@ A **Bash automation script** to run `run_setting_1.py` to `run_setting_4.py` acr
 
 ---
 
-The folder structure:
+We stored the numerical algorithm to be benchmarked in setA, setB, ...., and more. The folder structure: 
 
 
 ```text
 project/
-├── Numerical Algorithm 1/
+├── setA/
 │   ├── run_setting_1.py
 │   ├── ......
 │   ├── run_setting_k.py
@@ -30,7 +30,7 @@ project/
 │   ├── ......
 │   ├── prec_setting_k.json   ← required (generated or pre-existing)
 │   └── promise.yml                 ← required (generated or pre-existing)
-├── Numerical Algorithm 2/
+├── setB/
 │   └── (same files as above)
 ├── incomplete_set/                 ← will be skipped (missing files)
 ├── run_benchmarks.sh                    ← this script
