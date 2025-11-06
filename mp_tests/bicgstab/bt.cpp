@@ -346,7 +346,7 @@ int main() {
 
     __PROMISE__* b = generate_rhs(A);
     __PROMISE__* x_true = new __PROMISE__[A.n];
-    for (int i = 0; i < A.n; ++i) x_true[i] = 1.0; // x_true = [1, 1, ..., 1]
+    for (int i = 0; i < A.n; ++i) x_true[i] = 1.0; 
 
     auto start = std::chrono::high_resolution_clock::now();
     Result result = bicgstab(A, b, 2 * A.n, 1e-12);
