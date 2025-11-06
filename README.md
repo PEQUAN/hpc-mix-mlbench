@@ -1,5 +1,15 @@
 # HPC-MIX benchmarks
 
+## Setup
+
+To properly use the benchmark tool, one would need to install ``cadnaPromise`` in advance. To install, use:
+```bash
+pip install cadnaPromise
+```
+see [cadnaRromise](cadnaPromise/) in detail. 
+
+To add the code for benchmarking, add a project folder inside directory ``mp_tests`` including data aa well as executable code, and properly configured file ``promise.yml`` as well as floating point type format ``fp.json``. 
+
 
 ## Benchmark Run
 
