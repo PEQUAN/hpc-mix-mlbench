@@ -7,11 +7,11 @@
 #include <algorithm>
 
 struct CSRMatrix {
-    int n;           // Matrix dimension
-    double* values;  // Non-zero values
-    int* col_indices;// Column indices of non-zeros
-    int* row_ptr;    // Row pointers
-    int nnz;         // Number of non-zero elements
+    int n;           
+    double* values;  
+    int* col_indices;
+    int* row_ptr;    
+    int nnz;        
 };
 
 struct Pair {
@@ -39,75 +39,81 @@ void free_csr_matrix(CSRMatrix& A) {
     A.row_ptr = nullptr;
 }
 
-CSRMatrix generate_random_matrix(int n, double sparsity = 0.01) {
-    CSRMatrix A = {n, nullptr, nullptr, nullptr, 0};
-    std::random_device rd;
-    std::mt19937 gen(42);
-    std::uniform_real_distribution<> dis(-1.0, 1.0);
-    std::uniform_real_distribution<> prob(0.0, 1.0);
-
-    Pair** temp = new Pair*[n]();
-    int* temp_sizes = new int[n]();
-    for (int i = 0; i < n; ++i) {
-        temp[i] = new Pair[n]();
+CSRMatrix read_mtx(const std::string& filename) {
+    CSRMatrix A = {0, nullptr, nullptr, nullptr, 0};
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Error: Cannot open file " << filename << std::endl;
+        return A;
     }
 
-    for (int i = 0; i < n; ++i) {
-        temp[i][temp_sizes[i]] = {i, 0.0}; 
-        temp_sizes[i]++;
-        for (int j = 0; j < n; ++j) {
-            if (i != j && prob(gen) < sparsity) {
-                temp[i][temp_sizes[i]] = {j, dis(gen)};
-                temp_sizes[i]++;
-                if (i < j) {
-                    temp[j][temp_sizes[j]] = {i, temp[i][temp_sizes[i]-1].second};
-                    temp_sizes[j]++;
-                }
-            }
+    std::string line;
+    // Skip comments
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] != '%') break;
+    }
+
+    std::istringstream header(line);
+    int m, n, nnz;
+    header >> m >> n >> nnz;
+    if (m != n) {
+        std::cerr << "Error: Matrix must be square" << std::endl;
+        return A;
+    }
+
+    Pair* entries = new Pair[nnz];
+    int count = 0;
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == '%') continue;
+        std::istringstream iss(line);
+        int row, col;
+        double val;
+        if (iss >> row >> col >> val) {
+            row--; col--; // Convert to 0-based
+            entries[count++] = {row * n + col, val};
         }
     }
-
-    for (int i = 0; i < n; ++i) {
-        double off_diag_sum = 0.0;
-        for (int k = 0; k < temp_sizes[i]; ++k) {
-            if (temp[i][k].first != i) {
-                off_diag_sum += std::abs(temp[i][k].second);
-            }
-        }
-        for (int k = 0; k < temp_sizes[i]; ++k) {
-            if (temp[i][k].first == i) {
-                temp[i][k].second = off_diag_sum + 1.0;
-                break;
-            }
-        }
+    file.close();
+    if (count != nnz) {
+        std::cerr << "Error: Read " << count << " entries, expected " << nnz << std::endl;
+        delete[] entries;
+        return A;
     }
 
-    A.nnz = 0;
-    for (int i = 0; i < n; ++i) {
-        A.nnz += temp_sizes[i];
+    int* row_counts = new int[n]();
+    for (int i = 0; i < nnz; ++i) {
+        int row = entries[i].first / n;
+        row_counts[row]++;
     }
 
-    A.values = new double[A.nnz];
-    A.col_indices = new int[A.nnz];
+    A.n = n;
+    A.nnz = nnz;
+    A.values = new double[nnz];
+    A.col_indices = new int[nnz];
     A.row_ptr = new int[n + 1];
     A.row_ptr[0] = 0;
 
-    int pos = 0;
+    int* pos = new int[n]();
     for (int i = 0; i < n; ++i) {
-        std::sort(temp[i], temp[i] + temp_sizes[i], compare_by_column);
-        A.row_ptr[i + 1] = A.row_ptr[i] + temp_sizes[i];
-        for (int k = 0; k < temp_sizes[i]; ++k) {
-            A.col_indices[pos] = temp[i][k].first;
-            A.values[pos] = temp[i][k].second;
-            pos++;
-        }
+        A.row_ptr[i + 1] = A.row_ptr[i] + row_counts[i];
+        pos[i] = A.row_ptr[i];
     }
 
-    for (int i = 0; i < n; ++i) delete[] temp[i];
-    delete[] temp;
-    delete[] temp_sizes;
+    // Fill CSR
+    for (int i = 0; i < nnz; ++i) {
+        int flat = entries[i].first;
+        int row = flat / n;
+        int col = flat % n;
+        int idx = pos[row]++;
+        A.values[idx] = entries[i].second;
+        A.col_indices[idx] = col;
+    }
 
-    std::cout << "Generated matrix: " << n << " x " << n << " with " << A.nnz << " non-zeros" << std::endl;
+    delete[] entries;
+    delete[] row_counts;
+    delete[] pos;
+
+    std::cout << "Loaded matrix: " << n << " x " << n << " with " << A.nnz << " non-zeros from " << filename << std::endl;
     return A;
 }
 
@@ -134,7 +140,7 @@ double norm(const double* v, int n) {
 double* axpy(double alpha, const double* x, const double* y, int n) {
     double* result = new double[n];
     for (int i = 0; i < n; ++i) {
-        result[i] = std::fma(alpha, x[i], y[i]);
+        result[i] = alpha * x[i] + y[i];// std::fma(alpha, x[i], y[i]);
     }
     return result;
 }
@@ -151,7 +157,6 @@ double* get_diagonal(const CSRMatrix& A) {
     }
     return diag;
 }
-
 
 SORResult sor(const CSRMatrix& A, const double* b, double omega, int max_iter = 5000, double tol = 1e-6) {
     if (omega <= 0.0 || omega >= 2.0) {
@@ -246,17 +251,6 @@ SORResult sor(const CSRMatrix& A, const double* b, double omega, int max_iter = 
     return {x, norm(r, n), iter, false};
 }
 
-double* generate_rhs(int n) {
-    double* b = new double[n];
-    //std::random_device rd;
-    std::mt19937 gen(42);
-    std::uniform_real_distribution<> dis(1.0, 10.0);
-    for (int i = 0; i < n; ++i) {
-        b[i] = dis(gen);
-    }
-    return b;
-}
-
 void write_solution(const double* x, int n, const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
@@ -272,36 +266,51 @@ void write_solution(const double* x, int n, const std::string& filename) {
 
 int main() {
     try {
-        int n = 1000; 
-        double sparsity = 0.01; 
-        CSRMatrix A = generate_random_matrix(n, sparsity);
-        if (A.n == 0) {
+        const std::string mtx_file = "../../data/suitesparse/1138_bus.mtx";  // Adjust path if needed
+        CSRMatrix A = read_mtx(mtx_file);
+        if (A.n == 0 || A.values == nullptr) {
             free_csr_matrix(A);
             return 1;
         }
 
-        double* b = generate_rhs(A.n);
+        int n = A.n;
+
+        
+        double* x_true = new double[n];
+        for (int i = 0; i < n; ++i) {
+            x_true[i] = 1.0; // Ground truth: x = ones(n)
+        }
+
+        // Compute b = A @ x_true
+        double* b = matvec(A, x_true);
+
         double* diag = get_diagonal(A);
-        double omega = 1;
-        std::cout << "Estimated omega: " << omega << std::endl;
-        delete[] diag;
+        double omega = 1.0;
+        std::cout << "Using omega: " << omega << std::endl;
 
         auto start = std::chrono::high_resolution_clock::now();
         SORResult result = sor(A, b, omega, 5000, 1e-6);
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-        std::cout << "Matrix size: " << A.n << " x " << A.n << std::endl;
+        std::cout << "Matrix: 1138_bus.mtx (" << A.n << " x " << A.n << ")" << std::endl;
         std::cout << "Time: " << duration.count() << " ms" << std::endl;
         std::cout << "Final residual: " << result.residual << std::endl;
         std::cout << "Iterations: " << result.iterations << std::endl;
         std::cout << "Converged: " << (result.converged ? "yes" : "no") << std::endl;
 
-        write_solution(result.x, A.n, "../results/sor/sor_solution.csv");
+        double* error_vec = axpy(-1.0, result.x, x_true, n);
+        double error = norm(error_vec, n);
+        std::cout << "Error ||x - x_true||_2: " << error << std::endl;
+
+        write_solution(result.x, A.n, "../results/sor/sor_solution_1138_bus.csv");
 
         free_csr_matrix(A);
         delete[] b;
+        delete[] x_true;
         delete[] result.x;
+        delete[] diag;
+        delete[] error_vec;
     }
     catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
