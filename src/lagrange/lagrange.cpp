@@ -1,32 +1,6 @@
 #include <iostream>
 #include <cmath>
 
-void copy(double* dest, const double* src, int n) {
-    for (int i = 0; i < n; ++i) {
-        dest[i] = src[i];
-    }
-}
-
-void axpy(double a, const double* x, double* y, int n) {
-    // y = a * x + y
-    for (int i = 0; i < n; ++i) {
-        y[i] += a * x[i];
-    }
-}
-
-void scale(double a, double* x, int n) {
-    // x = a * x
-    for (int i = 0; i < n; ++i) {
-        x[i] *= a;
-    }
-}
-
-void add(const double* x, const double* y, double* result, int n) {
-    // result = x + y
-    for (int i = 0; i < n; ++i) {
-        result[i] = x[i] + y[i];
-    }
-}
 
 
 double true_function(double x) {
