@@ -14,13 +14,6 @@ void axpy(__PROMISE__ a, __PROMISE__* x, __PROMISE__* y, int n) {
     }
 }
 
-void scale(__PROMISE__ a, __PROMISE__* x, int n) {
-    // x = a * x
-    for (int i = 0; i < n; ++i) {
-        x[i] *= a;
-    }
-}
-
 void add(__PROMISE__* x, __PROMISE__* y, __PROMISE__* result, int n) {
     // result = x + y
     for (int i = 0; i < n; ++i) {
@@ -150,34 +143,6 @@ void simpsons_solve(__PROMISE__ t0, __PROMISE__ tf, __PROMISE__ h, __PROMISE__* 
 }
 
 
-void compute_metrics(__PROMISE__ t0, __PROMISE__ h, __PROMISE__* results, int n, int num_steps,
-                     __PROMISE__* max_abs_error, __PROMISE__* mean_abs_error, __PROMISE__* rmse,
-                     __PROMISE__* max_rel_error) {
-    __PROMISE__* y_exact = new __PROMISE__[n];
-    __PROMISE__ sum_abs_error = 0.0;
-    __PROMISE__ sum_sq_error = 0.0;
-    *max_abs_error = 0.0;
-    *max_rel_error = 0.0;
-    int total_points = num_steps * n;
-
-    for (int i = 0; i < num_steps; ++i) {
-        __PROMISE__ t = t0 + i * 2.0 * h; // Simpson's rule uses 2h steps
-        analytical_solution(t, y_exact, n);
-        for (int j = 0; j < n; ++j) {
-            __PROMISE__ error = abs(results[i * n + j] - y_exact[j]);
-            sum_abs_error += error;
-            sum_sq_error += error * error;
-            *max_abs_error = std::max(*max_abs_error, error);
-            if (abs(y_exact[j]) > 1e-10) {
-                __PROMISE__ rel_error = error / abs(y_exact[j]);
-                *max_rel_error = std::max(*max_rel_error, rel_error);
-            }
-        }
-    }
-
-    *mean_abs_error = sum_abs_error / total_points;
-    *rmse = sqrt(sum_sq_error / total_points);
-}
 
 
 int main() {
@@ -195,13 +160,6 @@ int main() {
     __PR_2__* results = new __PR_2__[num_steps * n];
 
     simpsons_solve(t0, tf, h, y0, n, results, &num_steps);
-
-    __PROMISE__ max_abs_error, mean_abs_error, rmse, max_rel_error;
-    compute_metrics(t0, h, results, n, num_steps,
-                    &max_abs_error, &mean_abs_error, &rmse, &max_rel_error);
-
-    std::cout << h << ", " << max_abs_error << ", " << mean_abs_error << ", "
-              << rmse << ", " << max_rel_error << "\n";
 
 
     PROMISE_CHECK_ARRAY(results, num_steps * n);

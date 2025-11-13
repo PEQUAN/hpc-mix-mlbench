@@ -14,12 +14,6 @@ void axpy(double a, const double* x, double* y, int n) {
     }
 }
 
-void scale(double a, double* x, int n) {
-    // x = a * x
-    for (int i = 0; i < n; ++i) {
-        x[i] *= a;
-    }
-}
 
 void add(const double* x, const double* y, double* result, int n) {
     // result = x + y
