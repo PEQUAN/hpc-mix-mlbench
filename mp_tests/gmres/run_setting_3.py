@@ -275,7 +275,7 @@ def plot_prec_setting(prec_setting, digits, runtimes):
 import sys
 
 if __name__ == "__main__":
-    method = 'chsd'
+    method = 'cbsd'
     digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
     # Default behavior: run both if no args provided
