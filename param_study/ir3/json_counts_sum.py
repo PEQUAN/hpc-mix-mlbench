@@ -12,10 +12,10 @@ CATEGORY_DISPLAY_NAMES = {
 }
 
 JSON_FILES = [
-    'precision_settings_1.json',
-    'precision_settings_2.json',
-    'precision_settings_3.json',
-    'precision_settings_4.json'
+    'prec_setting_1.json',
+    'prec_setting_2.json',
+    'prec_setting_3.json',
+    'prec_setting_4.json'
 ]
 
 # Root directory to search for folders (use current directory if empty)

@@ -223,7 +223,7 @@ double* read_matrix_market(const std::string& filename, int& n) {
 
 int main() {
     int n;
-    std::string matrix_file = "../../data/suitesparse/1138_bus.mtx";
+    std::string matrix_file = "../../data/suitesparse/bp_0.mtx";
 
     // Read matrix A
     double* A = read_matrix_market(matrix_file, n);

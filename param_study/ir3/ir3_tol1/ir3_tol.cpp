@@ -388,8 +388,8 @@ __PROMISE__* read_matrix_market(std::string& filename, int& n) {
 
 int main() {
     int n;
-    std::string matrix_file = "psmigr_2.mtx";
-    double kappa = 1e4; // Condition number (approximate or estimated)
+    std::string matrix_file = "bp_0.mtx";
+    double kappa = 7.133121 * 1e6; // Condition number (approximate or estimated)
     double tol = 1e-8;   // Tolerance for convergence slowing criterion
     
     // Read matrix A from file

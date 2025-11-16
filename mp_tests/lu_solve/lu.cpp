@@ -312,7 +312,7 @@ void compute_errors(const SparseMatrix& A, int n, const double* b, const double*
 
 int main() {
     int n;
-    std::string matrix_file = "psmigr_2.mtx";
+    std::string matrix_file = "bp_0.mtx";
 
     SparseMatrix A = read_matrix_market(matrix_file, n);
     if (!A.val) {

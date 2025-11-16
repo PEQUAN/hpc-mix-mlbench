@@ -626,8 +626,8 @@ double* read_matrix_market(const std::string& filename, int& n) {
 int main() {
     int n;
     double tol = 1e-8;
-    std::string matrix_file = "../../data/suitesparse/psmigr_2.mtx";
-    double kappa = 1e4; // Condition number (approximate or estimated)
+    std::string matrix_file = "../../data/suitesparse/bp_0.mtx";
+    double kappa = 7.133121 * 1e6; // Condition number (approximate or estimated)
     int max_iter = 2000; // Adjusted for larger matrix
 
     // Read matrix A from file

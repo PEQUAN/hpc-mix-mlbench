@@ -1,2 +1,2 @@
-g++ ir3_1138_bus2.cpp -o ir3
+g++ ir3_tol.cpp -o ir3
 ./ir3
