@@ -14,6 +14,9 @@
 #     - prec_setting_1.json
 #     - promise.yml
 # ------------------------------------------------------------
+#
+# Author: Xinye Chen
+# Last Updated: November 16, 2025
 
 # ---------- 1. Parse arguments ----------
 RUN_EXPERIMENTS=${1:-true}
