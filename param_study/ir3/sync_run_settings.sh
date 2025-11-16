@@ -84,7 +84,7 @@ if [ "$DO_DELETE" = false ] && [ "$DO_COPY" = false ]; then
 fi
 
 # Check if the run_settings folder exists in the parent directory if copying is enabled
-if [ "$DO_COPY" = true ] && [ ! -d "../run_settings" ]; then
+if [ "$DO_COPY" = true ] && [ ! -d "../../run_settings" ]; then
     echo "Error: The run_settings folder does not exist in the parent directory."
     exit 1
 fi
@@ -114,11 +114,11 @@ fi
 
 # Step 2: Copy all run_setting_*.py files from ../run_settings/ to each subfolder (if flag enabled)
 if [ "$DO_COPY" = true ]; then
-    echo "Copying run_setting_*.py files from ../run_settings/ to each subfolder..."
-    source_files=($(find ../run_settings -name "run_setting_*.py"))
+    echo "Copying run_setting_*.py files from ../../run_settings/ to each subfolder..."
+    source_files=($(find ../../run_settings -name "run_setting_*.py"))
 
     if [ ${#source_files[@]} -eq 0 ]; then
-        echo "Warning: No run_setting_*.py files found in ../run_settings/."
+        echo "Warning: No run_setting_*.py files found in ../../run_settings/."
         exit 0
     fi
 
