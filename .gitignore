@@ -4,10 +4,6 @@
 /data/regression/*.csv
 /data/suitesparse/*.mtx
 /data/results/kmeans/*.csv
-param_study/gmres/tol2/*.csv
-param_study/gmres/tol4/*.csv
-param_study/ir3/tol2/*.csv
-param_study/ir3/tol4/*.csv
 param_study/trash/*
 mp_tests/cg/*.mtx
 mp_tests/bicgstab/*.mtx
@@ -23,5 +19,5 @@ mp_tests/mlp/*.csv
 mp_tests/mlp_reg/*.csv
 mp_tests/randomforest/*.csv
 **/*debug*/**
-plots/*
+mp_tests/plots/*
 param_study/param_plots/*.jpg
