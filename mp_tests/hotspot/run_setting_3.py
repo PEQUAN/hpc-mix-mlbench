@@ -21,10 +21,12 @@ CATEGORY_COLORS = {
     'double': '#81D4FAB3',         # Sky Pop Blue
     'float': '#FFAB91B3',          # Candy Coral
     'half_float::half': '#BA68C8B3', # Bubblegum Purple
+    'flx::floatx<5, 10>': "#7262F0B3", # Violet Blue
     'flx::floatx<8, 7>': '#F06292B3', # Strawberry Pink
     'flx::floatx<4, 3>': '#AED581B3', # Apple Green
     'flx::floatx<5, 2>': '#FFF176B3', # Pineapple Yellow
 }
+
 
 def run_experiments(method, digits):
     """Run experiments, collect precision settings, and measure runtime."""
@@ -172,10 +174,12 @@ def plot_prec_setting(prec_setting, digits, runtimes):
         'flx::floatx<4, 3>',
         'flx::floatx<5, 2>',
         'flx::floatx<8, 7>',
+        'flx::floatx<5, 10>',
         'half_float::half',
         'float',
         'double'
     ]
+    
     
     heights = {cat: [] for cat in categories}
     for setting in prec_setting:

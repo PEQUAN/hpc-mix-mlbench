@@ -2,7 +2,7 @@
 
 # There is a folder named run_settings in the parent directory containing all run_setting_*.py files
 # This script will delete all run_setting_*.py files in each subfolder under the current directory
-# Then copy all run_setting_*.py files from ../run_settings/ to each subfolder
+# Then copy all run_setting_*.py files from ../../run_settings/ to each subfolder
 
 # Overview:
 # This Bash script manages `run_setting_*.py` files across multiple subfolders in the current working directory.
@@ -49,90 +49,120 @@
 # - Backup files before delete step!
 # - Grant execute: chmod +x sync_run_settings.sh
 #
-# Author: Xinye Chen
+# Author: Xinye Chen (xinyechenai@gmail.com)
 # Last Updated: November 16, 2025
 
 DO_DELETE=false
-DO_COPY=false 
+DO_COPY=false
+DO_FP_COPY=false
+DO_FP_DELETE=false
+
+usage() {
+    echo "Usage: $0 [options]"
+    echo ""
+    echo "Options:"
+    echo "  --delete, -d        Delete run_setting_*.py"
+    echo "  --copy,   -c        Copy run_setting_*.py"
+    echo "  --fp,     -f        Copy fp.json"
+    echo "  --fp-delete, -F     Delete fp.json"
+    echo ""
+    echo "If no options are given, all operations run."
+}
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         --delete|-d)
             DO_DELETE=true
-            shift
             ;;
         --copy|-c)
             DO_COPY=true
-            shift
+            ;;
+        --fp|-f)
+            DO_FP_COPY=true
+            ;;
+        --fp-delete|-F)
+            DO_FP_DELETE=true
             ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--delete|-d] [--copy|-c]"
-            echo "  --delete/-d: Execute step 1 (delete run_setting_*.py files from subfolders)"
-            echo "  --copy/-c:   Execute step 2 (copy run_setting_*.py files to subfolders)"
-            echo "If no options are provided, both steps will be executed."
+            usage
             exit 1
             ;;
     esac
+    shift
 done
 
-# If no flags provided, enable both
-if [ "$DO_DELETE" = false ] && [ "$DO_COPY" = false ]; then
+# If no flags → run everything
+if ! $DO_DELETE && ! $DO_COPY && ! $DO_FP_COPY && ! $DO_FP_DELETE; then
     DO_DELETE=true
     DO_COPY=true
+    DO_FP_COPY=true
+    DO_FP_DELETE=true
 fi
 
-# Check if the run_settings folder exists in the parent directory if copying is enabled
-if [ "$DO_COPY" = true ] && [ ! -d "../../run_settings" ]; then
-    echo "Error: The run_settings folder does not exist in the parent directory."
+# Validate run_settings folder for copy actions
+if ( $DO_COPY || $DO_FP_COPY ) && [ ! -d "../../run_settings" ]; then
+    echo "Error: ../../run_settings folder missing."
     exit 1
 fi
 
-# Get all subfolders in the current directory
+# Get subdirectories
 subdirs=($(find . -maxdepth 1 -type d ! -name .))
 
-# If there are no subfolders, exit
 if [ ${#subdirs[@]} -eq 0 ]; then
-    echo "No subfolders found in the current directory."
+    echo "No subfolders found."
     exit 1
 fi
 
-# Step 1: Delete all run_setting_*.py files in each subfolder (if flag enabled)
-if [ "$DO_DELETE" = true ]; then
-    echo "Deleting run_setting_*.py files from each subfolder..."
+#############################################
+# Step 1: Delete run_setting_*.py
+#############################################
+if $DO_DELETE; then
+    echo "Deleting run_setting_*.py..."
     for subdir in "${subdirs[@]}"; do
-        if [ -d "$subdir" ]; then
-            find "$subdir" -name "run_setting_*.py" -delete
-            echo "Cleaned: $subdir"
-        fi
+        find "$subdir" -maxdepth 1 -name "run_setting_*.py" -delete
+        echo "Cleaned $subdir"
     done
-    rm -rf plots
-else
-    echo "Step 1 (delete) skipped."
 fi
 
-# Step 2: Copy all run_setting_*.py files from ../run_settings/ to each subfolder (if flag enabled)
-if [ "$DO_COPY" = true ]; then
-    echo "Copying run_setting_*.py files from ../../run_settings/ to each subfolder..."
-    source_files=($(find ../../run_settings -name "run_setting_*.py"))
-
-    if [ ${#source_files[@]} -eq 0 ]; then
-        echo "Warning: No run_setting_*.py files found in ../../run_settings/."
-        exit 0
-    fi
-
-    for source_file in "${source_files[@]}"; do
-        filename=$(basename "$source_file")
-        for subdir in "${subdirs[@]}"; do
-            if [ -d "$subdir" ]; then
-                cp "$source_file" "$subdir/$filename"
-                echo "Copied $filename to $subdir"
-            fi
-        done
+#############################################
+# Step 2: Delete fp.json
+#############################################
+if $DO_FP_DELETE; then
+    echo "Deleting fp.json..."
+    for subdir in "${subdirs[@]}"; do
+        find "$subdir" -maxdepth 1 -name "fp.json" -delete
+        echo "Removed fp.json in $subdir"
     done
-else
-    echo "Step 2 (copy) skipped."
+fi
+
+#############################################
+# Step 3: Copy run_setting_*.py
+#############################################
+if $DO_COPY; then
+    echo "Copying run_setting_*.py..."
+    files=( ../../run_settings/run_setting_*.py )
+    for subdir in "${subdirs[@]}"; do
+        cp "${files[@]}" "$subdir/"
+        echo "Copied run_setting_*.py to $subdir"
+    done
+fi
+
+#############################################
+# Step 4: Copy fp.json
+#############################################
+if $DO_FP_COPY; then
+    FP_SOURCE="../../run_settings/fp.json"
+    if [ ! -f "$FP_SOURCE" ]; then
+        echo "Warning: fp.json not found in ../../run_settings/"
+    else
+        echo "Copying fp.json..."
+        for subdir in "${subdirs[@]}"; do
+            cp "$FP_SOURCE" "$subdir/"
+            echo "Copied fp.json to $subdir"
+        done
+    fi
 fi
 
 echo "Operation completed!"
