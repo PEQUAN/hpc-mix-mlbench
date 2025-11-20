@@ -26,7 +26,7 @@ fi
 
 ### 2. Remove debug-related folders
 if is_enabled "$REMOVE_DEBUG"; then
-    find . -type d \( -name "compileErrors" -o -name "*debug*" \) -exec rm -rf {} +
+    find . -type d \( -name "compileErrors" -o -name "*prec*" \) -exec rm -rf {} +
     echo "Folders named 'compileErrors' or containing 'debug' deleted."
 else
     echo "Skipping debug folder deletion."

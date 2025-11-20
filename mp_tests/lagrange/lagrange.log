@@ -1,15 +1,14 @@
-11/11 23:44:21: 🤘 cadnaPromise 🤘
-11/11 23:44:21: Using the compiler: g++
-11/11 23:44:21: We are working with 1 file and 20 different types
-11/11 23:44:21: The expectation is 10 digits.
-11/11 23:44:21: a) Get a reference result with cadna (double)
-11/11 23:44:25: b) Check with highest format (Double)
-11/11 23:44:27: c) Delta-Debug Single/Double
-11/11 23:45:17: directory has vanished: "/home/xinye/hpc-mix-mlbench/mp_tests/lagrange/debug"
-rsync warning: some files vanished before they could be transferred (code 24) at main.c(1338) [sender=3.2.7]
-
-11/11 23:45:34: d) Delta-Debug Half/Single
-11/11 23:45:37: The final result contains 18x double and 2x float.
-11/11 23:45:37: It tooks 76.00s
-11/11 23:45:37: 👉 66 compilations (34 failed) for 70.27s
-11/11 23:45:37: 👉 32 executions   (0 failed) for 0.21s
+11/19 10:56:15: 🤘 cadnaPromise 🤘
+11/19 10:56:15: Using the compiler: g++
+11/19 10:56:15: We are working with 1 file and 20 different types
+11/19 10:56:15: The expectation is 10 digits.
+11/19 10:56:15: a) Get a reference result with cadna (double)
+11/19 10:56:18: b) Check with highest format (Double)
+11/19 10:56:19: c) Delta-Debug Single/Double
+11/19 10:57:05: d) Delta-Debug bfloat16/Single
+11/19 10:57:06: The format flx::floatx<8, 7> is enough for your expectation
+11/19 10:57:06: e) Delta-Debug custom(4, 3)/bfloat16
+11/19 10:57:08: The final result contains 18x double, 1x flx::floatx<8, 7> and 1x flx::floatx<4, 3>.
+11/19 10:57:08: It tooks 52.29s
+11/19 10:57:08: 👉 66 compilations (31 failed) for 45.97s
+11/19 10:57:08: 👉 35 executions   (0 failed) for 0.30s

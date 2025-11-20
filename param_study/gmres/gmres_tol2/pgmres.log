@@ -1,91 +1,501 @@
-11/17 20:34:19: 🤘 cadnaPromise 🤘
-11/17 20:34:19: Using the compiler: g++
-11/17 20:34:19: We are working with 1 file and 86 different types
-11/17 20:34:19: The expectation is 10 digits.
-11/17 20:34:19: a) Get a reference result with cadna (double)
-11/17 20:34:22: In file included from pgmres.cpp:7:
-./promise.h: In function ‘std::string floatx_to_hex(const T&)’:
-./promise.h:65:22: error: ‘bit_cast’ is not a member of ‘std’; did you mean ‘bad_cast’?
-   65 |     auto bits = std::bit_cast<std::uint32_t>(val);  // Assumes 32-bit storage; adjust to uint16_t if <16 bits total
-      |                      ^~~~~~~~
-      |                      bad_cast
-./promise.h:65:44: error: expected primary-expression before ‘>’ token
-   65 |     auto bits = std::bit_cast<std::uint32_t>(val);  // Assumes 32-bit storage; adjust to uint16_t if <16 bits total
-      |                                            ^
-./promise.h: At global scope:
-./promise.h:74:13: error: redefinition of ‘template<class T> std::string floatx_to_hex(const T&)’
-   74 | std::string floatx_to_hex(const T& val) {
-      |             ^~~~~~~~~~~~~
-./promise.h:63:13: note: ‘template<class T> std::string floatx_to_hex(const T&)’ previously declared here
-   63 | std::string floatx_to_hex(const T& val) {
-      |             ^~~~~~~~~~~~~
-./promise.h:86:43: error: type/value mismatch at argument 1 in template parameter list for ‘template<int ExpBits, int SigBits, class BackendFloat> class flx::floatx’
-   86 | std::enable_if_t<is_floatx<flx::floatx<E, M>>::value, void>
-      |                                           ^
-./promise.h:86:43: note:   expected a constant of type ‘int’, got ‘E’
-./promise.h:86:43: error: type/value mismatch at argument 2 in template parameter list for ‘template<int ExpBits, int SigBits, class BackendFloat> class flx::floatx’
-./promise.h:86:43: note:   expected a constant of type ‘int’, got ‘M’
-./promise.h:86:44: error: template argument 1 is invalid
-   86 | std::enable_if_t<is_floatx<flx::floatx<E, M>>::value, void>
-      |                                            ^~
-./promise.h:86:59: error: template argument 1 is invalid
-   86 | std::enable_if_t<is_floatx<flx::floatx<E, M>>::value, void>
-      |                                                           ^
-./promise.h:87:51: error: type/value mismatch at argument 1 in template parameter list for ‘template<int ExpBits, int SigBits, class BackendFloat> class flx::floatx’
-   87 | promise_dump(char const* varName, flx::floatx<E, M>* a, long size) {
-      |                                                   ^
-./promise.h:87:51: note:   expected a constant of type ‘int’, got ‘E’
-./promise.h:87:51: error: type/value mismatch at argument 2 in template parameter list for ‘template<int ExpBits, int SigBits, class BackendFloat> class flx::floatx’
-./promise.h:87:51: note:   expected a constant of type ‘int’, got ‘M’
-./promise.h: In function ‘int promise_dump(const char*, int*, long int)’:
-./promise.h:90:9: error: return-statement with no value, in function returning ‘int’ [-fpermissive]
-   90 |         return;
-      |         ^~~~~~
-./promise.h:92:67: error: expected primary-expression before ‘<<’ token
-   92 |     std::cout << "[PROMISE_DUMP] " << varName << " (floatx<" << E << "," << M << ">, size=" << size << "):" << std::endl;
-      |                                                                   ^~
-./promise.h:92:79: error: expected primary-expression before ‘<<’ token
-   92 |     std::cout << "[PROMISE_DUMP] " << varName << " (floatx<" << E << "," << M << ">, size=" << size << "):" << std::endl;
-      |                                                                               ^~
-./promise.h:96:71: error: expected primary-expression before ‘<<’ token
-   96 |         std::cout << " = " << floatx_to_hex(a[i]) << " (floatx<" << E << "," << M << ">)" << std::endl;
-      |                                                                       ^~
-./promise.h:96:83: error: expected primary-expression before ‘<<’ token
-   96 |         std::cout << " = " << floatx_to_hex(a[i]) << " (floatx<" << E << "," << M << ">)" << std::endl;
-      |                                                                                   ^~
-./promise.h: At global scope:
-./promise.h:102:43: error: type/value mismatch at argument 1 in template parameter list for ‘template<int ExpBits, int SigBits, class BackendFloat> class flx::floatx’
-  102 | std::enable_if_t<is_floatx<flx::floatx<E, M>>::value, void>
-      |                                           ^
-./promise.h:102:43: note:   expected a constant of type ‘int’, got ‘E’
-./promise.h:102:43: error: type/value mismatch at argument 2 in template parameter list for ‘template<int ExpBits, int SigBits, class BackendFloat> class flx::floatx’
-./promise.h:102:43: note:   expected a constant of type ‘int’, got ‘M’
-./promise.h:102:44: error: template argument 1 is invalid
-  102 | std::enable_if_t<is_floatx<flx::floatx<E, M>>::value, void>
-      |                                            ^~
-./promise.h:102:59: error: template argument 1 is invalid
-  102 | std::enable_if_t<is_floatx<flx::floatx<E, M>>::value, void>
-      |                                                           ^
-./promise.h:103:55: error: type/value mismatch at argument 1 in template parameter list for ‘template<int ExpBits, int SigBits, class BackendFloat> class flx::floatx’
-  103 | promise_dump_arr(char const* varName, flx::floatx<E, M>** a, long rows, long cols) {
-      |                                                       ^
-./promise.h:103:55: note:   expected a constant of type ‘int’, got ‘E’
-./promise.h:103:55: error: type/value mismatch at argument 2 in template parameter list for ‘template<int ExpBits, int SigBits, class BackendFloat> class flx::floatx’
-./promise.h:103:55: note:   expected a constant of type ‘int’, got ‘M’
-./promise.h: In function ‘int promise_dump_arr(const char*, int**, long int, long int)’:
-./promise.h:106:9: error: return-statement with no value, in function returning ‘int’ [-fpermissive]
-  106 |         return;
-      |         ^~~~~~
-./promise.h:113:21: error: no matching function for call to ‘promise_dump(const char*&, int*&, long int&)’
-  113 |         promise_dump(varName, a[i], cols);
-      |         ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~
-./promise.h:87:1: note: candidate: ‘template<class E, class M> int promise_dump(const char*, int*, long int)’
-   87 | promise_dump(char const* varName, flx::floatx<E, M>* a, long size) {
-      | ^~~~~~~~~~~~
-./promise.h:87:1: note:   template argument deduction/substitution failed:
-./promise.h:113:21: note:   couldn’t deduce template parameter ‘E’
-  113 |         promise_dump(varName, a[i], cols);
-      |         ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+11/20 09:32:44: 🤘 cadnaPromise 🤘
+11/20 09:32:44: Using the compiler: g++
+11/20 09:32:44: We are working with 1 file and 86 different types
+11/20 09:32:44: The expectation is 1 digits.
+11/20 09:32:44: a) Get a reference result with cadna (double)
+11/20 09:34:30: b) Check with highest format (Double)
+11/20 09:34:50: c) Delta-Debug Single/Double
+11/20 09:43:04: d) Delta-Debug bfloat16/Single
+11/20 09:53:40: e) Delta-Debug custom(5, 2)/bfloat16
+11/20 09:55:08: Loaded matrix: 3140 x 3140 with 540022 non-zeros
+Generated b = A * x_true, where x_true = [1, 1, ..., 1]
+A.n=3140, A.nnz=540022
+Initial norm of residual: 4
+Iteration 10: Residual = 0.0416667
+Iteration 20: Residual = 0.0357143
+Iteration 30: Residual = 0.0357143
+Iteration 40: Residual = 0.0357143
+Iteration 50: Residual = 0.0357143
+Iteration 60: Residual = 0.0357143
+Iteration 70: Residual = 0.0357143
+Iteration 80: Residual = 0.0357143
+Iteration 90: Residual = 0.0357143
+Iteration 100: Residual = 0.0357143
+Iteration 110: Residual = 0.0642857
+Iteration 120: Residual = 0.0642857
+Iteration 130: Residual = 0.0642857
+Iteration 140: Residual = 0.0642857
+Iteration 150: Residual = 0.0642857
+Iteration 160: Residual = 0.0642857
+Iteration 170: Residual = 0.0642857
+Iteration 180: Residual = 0.0642857
+Iteration 190: Residual = 0.0642857
+Iteration 200: Residual = 0.0642857
+Iteration 210: Residual = 0.135
+Iteration 220: Residual = 0.118125
+Iteration 230: Residual = 0.118125
+Iteration 240: Residual = 0.118125
+Iteration 250: Residual = 0.084375
+Iteration 260: Residual = 0.084375
+Iteration 270: Residual = 0.084375
+Iteration 280: Residual = 0.084375
+Iteration 290: Residual = 0.084375
+Iteration 300: Residual = 0.084375
+Iteration 310: Residual = 0.214286
+Iteration 320: Residual = 0.1875
+Iteration 330: Residual = 0.1875
+Iteration 340: Residual = 0.1875
+Iteration 350: Residual = 0.1875
+Iteration 360: Residual = 0.1875
+Iteration 370: Residual = 0.1875
+Iteration 380: Residual = 0.128571
+Iteration 390: Residual = 0.128571
+Iteration 400: Residual = 0.128571
+Iteration 410: Residual = 0.18375
+Iteration 420: Residual = 0.1575
+Iteration 430: Residual = 0.1575
+Iteration 440: Residual = 0.1575
+Iteration 450: Residual = 0.1575
+Iteration 460: Residual = 0.1575
+Iteration 470: Residual = 0.1575
+Iteration 480: Residual = 0.1575
+Iteration 490: Residual = 0.1575
+Iteration 500: Residual = 0.1575
+Iteration 510: Residual = 0.234375
+Iteration 520: Residual = 0.234375
+Iteration 530: Residual = 0.234375
+Iteration 540: Residual = 0.205078
+Iteration 550: Residual = 0.205078
+Iteration 560: Residual = 0.205078
+Iteration 570: Residual = 0.205078
+Iteration 580: Residual = 0.205078
+Iteration 590: Residual = 0.205078
+Iteration 600: Residual = 0.205078
+Iteration 610: Residual = 0.535714
+Iteration 620: Residual = 0.428571
+Iteration 630: Residual = 0.367347
+Iteration 640: Residual = 0.367347
+Iteration 650: Residual = 0.367347
+Iteration 660: Residual = 0.367347
+Iteration 670: Residual = 0.367347
+Iteration 680: Residual = 0.367347
+Iteration 690: Residual = 0.367347
+Iteration 700: Residual = 0.367347
+Iteration 710: Residual = 0.685714
+Iteration 720: Residual = 0.514286
+Iteration 730: Residual = 0.514286
+Iteration 740: Residual = 0.514286
+Iteration 750: Residual = 0.514286
+Iteration 760: Residual = 0.514286
+Iteration 770: Residual = 0.440816
+Iteration 780: Residual = 0.440816
+Iteration 790: Residual = 0.385714
+Iteration 800: Residual = 0.385714
+Iteration 810: Residual = 0.98
+Iteration 820: Residual = 0.784
+Iteration 830: Residual = 0.784
+Iteration 840: Residual = 0.672
+Iteration 850: Residual = 0.672
+Iteration 860: Residual = 0.672
+Iteration 870: Residual = 0.672
+Iteration 880: Residual = 0.672
+Iteration 890: Residual = 0.672
+Iteration 900: Residual = 0.672
+Iteration 910: Residual = 1.94444
+Iteration 920: Residual = 1.94444
+Iteration 930: Residual = 1.94444
+Iteration 940: Residual = 1.27604
+Iteration 950: Residual = 1.11654
+Iteration 960: Residual = 1.11654
+Iteration 970: Residual = 1.11654
+Iteration 980: Residual = 0.957031
+Iteration 990: Residual = 0.957031
+Iteration 1000: Residual = 0.957031
+Iteration 1010: Residual = 2.1
+Iteration 1020: Residual = 1.344
+Iteration 1030: Residual = 0.987429
+Iteration 1040: Residual = 0.987429
+Iteration 1050: Residual = 0.987429
+Iteration 1060: Residual = 0.987429
+Iteration 1070: Residual = 0.846367
+Iteration 1080: Residual = 0.846367
+Iteration 1090: Residual = 0.846367
+Iteration 1100: Residual = 0.846367
+Iteration 1110: Residual = 3
+Iteration 1120: Residual = 2.57143
+Iteration 1130: Residual = 2.57143
+Iteration 1140: Residual = 2.25
+Iteration 1150: Residual = 2.25
+Iteration 1160: Residual = 1.92857
+Iteration 1170: Residual = 1.92857
+Iteration 1180: Residual = 1.92857
+Iteration 1190: Residual = 1.92857
+Iteration 1200: Residual = 1.92857
+Iteration 1210: Residual = 2.94
+Iteration 1220: Residual = 2.94
+Iteration 1230: Residual = 2.94
+Iteration 1240: Residual = 2.205
+Iteration 1250: Residual = 2.205
+Iteration 1260: Residual = 2.205
+Iteration 1270: Residual = 2.205
+Iteration 1280: Residual = 2.205
+Iteration 1290: Residual = 2.205
+Iteration 1300: Residual = 2.205
+Iteration 1310: Residual = 4.7619
+Iteration 1320: Residual = 3.57143
+Iteration 1330: Residual = 3.57143
+Iteration 1340: Residual = 3.57143
+Iteration 1350: Residual = 3.57143
+Iteration 1360: Residual = 2.85714
+Iteration 1370: Residual = 2.85714
+Iteration 1380: Residual = 2.85714
+Iteration 1390: Residual = 2.85714
+Iteration 1400: Residual = 2.85714
+Iteration 1410: Residual = 4.62857
+Iteration 1420: Residual = 4.62857
+Iteration 1430: Residual = 4.05
+Iteration 1440: Residual = 4.05
+Iteration 1450: Residual = 4.05
+Iteration 1460: Residual = 4.05
+Iteration 1470: Residual = 4.05
+Iteration 1480: Residual = 3.47143
+Iteration 1490: Residual = 3.47143
+Iteration 1500: Residual = 3.47143
+Iteration 1510: Residual = 11.2
+Iteration 1520: Residual = 9.8
+Iteration 1530: Residual = 9.8
+Iteration 1540: Residual = 8.4
+Iteration 1550: Residual = 8.4
+Iteration 1560: Residual = 8.4
+Iteration 1570: Residual = 8.4
+Iteration 1580: Residual = 8.4
+Iteration 1590: Residual = 8.4
+Iteration 1600: Residual = 8.4
+Iteration 1610: Residual = 21
+Iteration 1620: Residual = 21
+Iteration 1630: Residual = 21
+Iteration 1640: Residual = 21
+Iteration 1650: Residual = 18
+Iteration 1660: Residual = 9.87429
+Iteration 1670: Residual = 9.87429
+Iteration 1680: Residual = 9.87429
+Iteration 1690: Residual = 9.87429
+Iteration 1700: Residual = 9.87429
+Iteration 1710: Residual = 15.2381
+Iteration 1720: Residual = 15.2381
+Iteration 1730: Residual = 13.0612
+Iteration 1740: Residual = 13.0612
+Iteration 1750: Residual = 13.0612
+Iteration 1760: Residual = 13.0612
+Iteration 1770: Residual = 13.0612
+Iteration 1780: Residual = 11.1953
+Iteration 1790: Residual = 11.1953
+Iteration 1800: Residual = 11.1953
+Iteration 1810: Residual = 31.3469
+Iteration 1820: Residual = 25.0776
+Iteration 1830: Residual = 21.9429
+Iteration 1840: Residual = 18.8082
+Iteration 1850: Residual = 18.8082
+Iteration 1860: Residual = 18.8082
+Iteration 1870: Residual = 16.1213
+Iteration 1880: Residual = 16.1213
+Iteration 1890: Residual = 16.1213
+Iteration 1900: Residual = 16.1213
+Iteration 1910: Residual = 38.4
+Iteration 1920: Residual = 28.2122
+Iteration 1930: Residual = 28.2122
+Iteration 1940: Residual = 28.2122
+Iteration 1950: Residual = 22.5698
+Iteration 1960: Residual = 22.5698
+Iteration 1970: Residual = 22.5698
+Iteration 1980: Residual = 22.5698
+Iteration 1990: Residual = 19.3455
+Iteration 2000: Residual = 14.213
+Iteration 2010: Residual = 67.2
+Iteration 2020: Residual = 67.2
+Iteration 2030: Residual = 58.8
+Iteration 2040: Residual = 58.8
+Iteration 2050: Residual = 50.4
+Iteration 2060: Residual = 50.4
+Iteration 2070: Residual = 50.4
+Iteration 2080: Residual = 44.1
+Iteration 2090: Residual = 44.1
+Iteration 2100: Residual = 44.1
+Iteration 2110: Residual = 51.2
+Iteration 2120: Residual = 37.6163
+Iteration 2130: Residual = 37.6163
+Iteration 2140: Residual = 37.6163
+Iteration 2150: Residual = 37.6163
+Iteration 2160: Residual = 37.6163
+Iteration 2170: Residual = 37.6163
+Iteration 2180: Residual = 37.6163
+Iteration 2190: Residual = 37.6163
+Iteration 2200: Residual = 37.6163
+Iteration 2210: Residual = 48
+Iteration 2220: Residual = 48
+Iteration 2230: Residual = 40
+Iteration 2240: Residual = 40
+Iteration 2250: Residual = 40
+Iteration 2260: Residual = 40
+Iteration 2270: Residual = 40
+Iteration 2280: Residual = 40
+Iteration 2290: Residual = 40
+Iteration 2300: Residual = 40
+Iteration 2310: Residual = 71.1111
+Iteration 2320: Residual = 71.1111
+Iteration 2330: Residual = 71.1111
+Iteration 2340: Residual = 71.1111
+Iteration 2350: Residual = 71.1111
+Iteration 2360: Residual = 71.1111
+Iteration 2370: Residual = 71.1111
+Iteration 2380: Residual = 56.8889
+Iteration 2390: Residual = 56.8889
+Iteration 2400: Residual = 49.7778
+Error: Invalid norm
 
-11/17 20:34:22: Compilation failed
-Is Cadna installed? Did you link your cade with Cadna with `-lcadnac`, `-L$CADNA_PATH/lib` and `-I$CADNA_PATH/include` ?
+11/20 10:00:26: Loaded matrix: 3140 x 3140 with 540022 non-zeros
+Generated b = A * x_true, where x_true = [1, 1, ..., 1]
+A.n=3140, A.nnz=540022
+Initial norm of residual: 4
+Iteration 10: Residual = 0.0416667
+Iteration 20: Residual = 0.0357143
+Iteration 30: Residual = 0.0357143
+Iteration 40: Residual = 0.0357143
+Iteration 50: Residual = 0.0357143
+Iteration 60: Residual = 0.0357143
+Iteration 70: Residual = 0.0357143
+Iteration 80: Residual = 0.0357143
+Iteration 90: Residual = 0.0357143
+Iteration 100: Residual = 0.0357143
+Iteration 110: Residual = 0.0642857
+Iteration 120: Residual = 0.0642857
+Iteration 130: Residual = 0.0642857
+Iteration 140: Residual = 0.0642857
+Iteration 150: Residual = 0.0642857
+Iteration 160: Residual = 0.0642857
+Iteration 170: Residual = 0.0642857
+Iteration 180: Residual = 0.0642857
+Iteration 190: Residual = 0.0642857
+Iteration 200: Residual = 0.0642857
+Iteration 210: Residual = 0.135
+Iteration 220: Residual = 0.118125
+Iteration 230: Residual = 0.118125
+Iteration 240: Residual = 0.118125
+Iteration 250: Residual = 0.084375
+Iteration 260: Residual = 0.084375
+Iteration 270: Residual = 0.084375
+Iteration 280: Residual = 0.084375
+Iteration 290: Residual = 0.084375
+Iteration 300: Residual = 0.084375
+Iteration 310: Residual = 0.214286
+Iteration 320: Residual = 0.1875
+Iteration 330: Residual = 0.1875
+Iteration 340: Residual = 0.1875
+Iteration 350: Residual = 0.1875
+Iteration 360: Residual = 0.1875
+Iteration 370: Residual = 0.1875
+Iteration 380: Residual = 0.128571
+Iteration 390: Residual = 0.128571
+Iteration 400: Residual = 0.128571
+Iteration 410: Residual = 0.18375
+Iteration 420: Residual = 0.1575
+Iteration 430: Residual = 0.1575
+Iteration 440: Residual = 0.1575
+Iteration 450: Residual = 0.1575
+Iteration 460: Residual = 0.1575
+Iteration 470: Residual = 0.1575
+Iteration 480: Residual = 0.1575
+Iteration 490: Residual = 0.1575
+Iteration 500: Residual = 0.1575
+Iteration 510: Residual = 0.234375
+Iteration 520: Residual = 0.234375
+Iteration 530: Residual = 0.234375
+Iteration 540: Residual = 0.205078
+Iteration 550: Residual = 0.205078
+Iteration 560: Residual = 0.205078
+Iteration 570: Residual = 0.205078
+Iteration 580: Residual = 0.205078
+Iteration 590: Residual = 0.205078
+Iteration 600: Residual = 0.205078
+Iteration 610: Residual = 0.535714
+Iteration 620: Residual = 0.428571
+Iteration 630: Residual = 0.367347
+Iteration 640: Residual = 0.367347
+Iteration 650: Residual = 0.367347
+Iteration 660: Residual = 0.367347
+Iteration 670: Residual = 0.367347
+Iteration 680: Residual = 0.367347
+Iteration 690: Residual = 0.367347
+Iteration 700: Residual = 0.367347
+Iteration 710: Residual = 0.685714
+Iteration 720: Residual = 0.514286
+Iteration 730: Residual = 0.514286
+Iteration 740: Residual = 0.514286
+Iteration 750: Residual = 0.514286
+Iteration 760: Residual = 0.514286
+Iteration 770: Residual = 0.440816
+Iteration 780: Residual = 0.440816
+Iteration 790: Residual = 0.385714
+Iteration 800: Residual = 0.385714
+Iteration 810: Residual = 0.98
+Iteration 820: Residual = 0.784
+Iteration 830: Residual = 0.784
+Iteration 840: Residual = 0.672
+Iteration 850: Residual = 0.672
+Iteration 860: Residual = 0.672
+Iteration 870: Residual = 0.672
+Iteration 880: Residual = 0.672
+Iteration 890: Residual = 0.672
+Iteration 900: Residual = 0.672
+Iteration 910: Residual = 1.94444
+Iteration 920: Residual = 1.94444
+Iteration 930: Residual = 1.94444
+Iteration 940: Residual = 1.27604
+Iteration 950: Residual = 1.11654
+Iteration 960: Residual = 1.11654
+Iteration 970: Residual = 1.11654
+Iteration 980: Residual = 0.957031
+Iteration 990: Residual = 0.957031
+Iteration 1000: Residual = 0.957031
+Iteration 1010: Residual = 2.1
+Iteration 1020: Residual = 1.344
+Iteration 1030: Residual = 0.987429
+Iteration 1040: Residual = 0.987429
+Iteration 1050: Residual = 0.987429
+Iteration 1060: Residual = 0.987429
+Iteration 1070: Residual = 0.846367
+Iteration 1080: Residual = 0.846367
+Iteration 1090: Residual = 0.846367
+Iteration 1100: Residual = 0.846367
+Iteration 1110: Residual = 3
+Iteration 1120: Residual = 2.57143
+Iteration 1130: Residual = 2.57143
+Iteration 1140: Residual = 2.25
+Iteration 1150: Residual = 2.25
+Iteration 1160: Residual = 1.92857
+Iteration 1170: Residual = 1.92857
+Iteration 1180: Residual = 1.92857
+Iteration 1190: Residual = 1.92857
+Iteration 1200: Residual = 1.92857
+Iteration 1210: Residual = 2.94
+Iteration 1220: Residual = 2.94
+Iteration 1230: Residual = 2.94
+Iteration 1240: Residual = 2.205
+Iteration 1250: Residual = 2.205
+Iteration 1260: Residual = 2.205
+Iteration 1270: Residual = 2.205
+Iteration 1280: Residual = 2.205
+Iteration 1290: Residual = 2.205
+Iteration 1300: Residual = 2.205
+Iteration 1310: Residual = 4.7619
+Iteration 1320: Residual = 3.57143
+Iteration 1330: Residual = 3.57143
+Iteration 1340: Residual = 3.57143
+Iteration 1350: Residual = 3.57143
+Iteration 1360: Residual = 2.85714
+Iteration 1370: Residual = 2.85714
+Iteration 1380: Residual = 2.85714
+Iteration 1390: Residual = 2.85714
+Iteration 1400: Residual = 2.85714
+Iteration 1410: Residual = 4.62857
+Iteration 1420: Residual = 4.62857
+Iteration 1430: Residual = 4.05
+Iteration 1440: Residual = 4.05
+Iteration 1450: Residual = 4.05
+Iteration 1460: Residual = 4.05
+Iteration 1470: Residual = 4.05
+Iteration 1480: Residual = 3.47143
+Iteration 1490: Residual = 3.47143
+Iteration 1500: Residual = 3.47143
+Iteration 1510: Residual = 11.2
+Iteration 1520: Residual = 9.8
+Iteration 1530: Residual = 9.8
+Iteration 1540: Residual = 8.4
+Iteration 1550: Residual = 8.4
+Iteration 1560: Residual = 8.4
+Iteration 1570: Residual = 8.4
+Iteration 1580: Residual = 8.4
+Iteration 1590: Residual = 8.4
+Iteration 1600: Residual = 8.4
+Iteration 1610: Residual = 21
+Iteration 1620: Residual = 21
+Iteration 1630: Residual = 21
+Iteration 1640: Residual = 21
+Iteration 1650: Residual = 18
+Iteration 1660: Residual = 9.87429
+Iteration 1670: Residual = 9.87429
+Iteration 1680: Residual = 9.87429
+Iteration 1690: Residual = 9.87429
+Iteration 1700: Residual = 9.87429
+Iteration 1710: Residual = 15.2381
+Iteration 1720: Residual = 15.2381
+Iteration 1730: Residual = 13.0612
+Iteration 1740: Residual = 13.0612
+Iteration 1750: Residual = 13.0612
+Iteration 1760: Residual = 13.0612
+Iteration 1770: Residual = 13.0612
+Iteration 1780: Residual = 11.1953
+Iteration 1790: Residual = 11.1953
+Iteration 1800: Residual = 11.1953
+Iteration 1810: Residual = 31.3469
+Iteration 1820: Residual = 25.0776
+Iteration 1830: Residual = 21.9429
+Iteration 1840: Residual = 18.8082
+Iteration 1850: Residual = 18.8082
+Iteration 1860: Residual = 18.8082
+Iteration 1870: Residual = 16.1213
+Iteration 1880: Residual = 16.1213
+Iteration 1890: Residual = 16.1213
+Iteration 1900: Residual = 16.1213
+Iteration 1910: Residual = 38.4
+Iteration 1920: Residual = 28.2122
+Iteration 1930: Residual = 28.2122
+Iteration 1940: Residual = 28.2122
+Iteration 1950: Residual = 22.5698
+Iteration 1960: Residual = 22.5698
+Iteration 1970: Residual = 22.5698
+Iteration 1980: Residual = 22.5698
+Iteration 1990: Residual = 19.3455
+Iteration 2000: Residual = 14.213
+Iteration 2010: Residual = 67.2
+Iteration 2020: Residual = 67.2
+Iteration 2030: Residual = 58.8
+Iteration 2040: Residual = 58.8
+Iteration 2050: Residual = 50.4
+Iteration 2060: Residual = 50.4
+Iteration 2070: Residual = 50.4
+Iteration 2080: Residual = 44.1
+Iteration 2090: Residual = 44.1
+Iteration 2100: Residual = 44.1
+Iteration 2110: Residual = 51.2
+Iteration 2120: Residual = 37.6163
+Iteration 2130: Residual = 37.6163
+Iteration 2140: Residual = 37.6163
+Iteration 2150: Residual = 37.6163
+Iteration 2160: Residual = 37.6163
+Iteration 2170: Residual = 37.6163
+Iteration 2180: Residual = 37.6163
+Iteration 2190: Residual = 37.6163
+Iteration 2200: Residual = 37.6163
+Iteration 2210: Residual = 48
+Iteration 2220: Residual = 48
+Iteration 2230: Residual = 40
+Iteration 2240: Residual = 40
+Iteration 2250: Residual = 40
+Iteration 2260: Residual = 40
+Iteration 2270: Residual = 40
+Iteration 2280: Residual = 40
+Iteration 2290: Residual = 40
+Iteration 2300: Residual = 40
+Iteration 2310: Residual = 71.1111
+Iteration 2320: Residual = 71.1111
+Iteration 2330: Residual = 71.1111
+Iteration 2340: Residual = 71.1111
+Iteration 2350: Residual = 71.1111
+Iteration 2360: Residual = 71.1111
+Iteration 2370: Residual = 71.1111
+Iteration 2380: Residual = 56.8889
+Iteration 2390: Residual = 56.8889
+Iteration 2400: Residual = 49.7778
+Error: Invalid norm
+
