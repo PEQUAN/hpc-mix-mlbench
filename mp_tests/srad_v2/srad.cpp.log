@@ -3,3 +3,4 @@
 11/21 09:40:57: We are working with 1 file and 11 different types
 11/21 09:40:57: The expectation is 4 digits.
 11/21 09:40:57: a) Get a reference result with cadna (double)
+11/21 09:41:48: b) Check with highest format (Double)

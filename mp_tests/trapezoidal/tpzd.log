@@ -7,3 +7,4 @@
 11/21 09:39:36: c) Delta-Debug Single/Double
 11/21 09:39:37: The format float is enough for your expectation
 11/21 09:39:37: d) Delta-Debug bfloat16/Single
+11/21 09:41:35: e) Delta-Debug custom(5, 2)/bfloat16
