@@ -1,0 +1,7 @@
+compile:
+- g++ ir3_tol.cpp -frounding-math -m64 -o ir3.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+
+run: ir3.out
+files: ir3_tol.cpp
+log: ir3.log
+output: debug/

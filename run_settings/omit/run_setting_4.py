@@ -60,7 +60,7 @@ def run_experiments(method, digits):
             runtimes.append(0.0)
     return prec_setting, runtimes
 
-def save_prec_setting(prec_setting, filename='prec_setting_3.json'):
+def save_prec_setting(prec_setting, filename='prec_setting_4.json'):
     """Save precision settings to a JSON file."""
     try:
         for setting in prec_setting:
@@ -77,7 +77,7 @@ def save_prec_setting(prec_setting, filename='prec_setting_3.json'):
         with open(filename, 'w') as f:
             json.dump([], f)
 
-def save_runtimes_to_csv(digits, runtimes, filename='runtimes3.csv'):
+def save_runtimes_to_csv(digits, runtimes, filename='runtimes4.csv'):
     """Save runtimes and their average to a CSV file."""
     try:
         average_runtime = sum(runtimes) / len(runtimes) if runtimes else 0
@@ -91,7 +91,7 @@ def save_runtimes_to_csv(digits, runtimes, filename='runtimes3.csv'):
     except Exception as e:
         print(f"Error saving runtimes to CSV: {e}")
 
-def load_prec_setting(filename='prec_setting_3.json'):
+def load_prec_setting(filename='prec_setting_4.json'):
     """Load precision settings from a JSON file."""
     if not os.path.exists(filename):
         print(f"Error: {filename} does not exist, regenerating data...")
@@ -117,7 +117,7 @@ def load_prec_setting(filename='prec_setting_3.json'):
         save_prec_setting(prec_setting, filename)
         return prec_setting
 
-def load_runtimes(filename='runtimes3.csv'):
+def load_runtimes(filename='runtimes4.csv'):
     """Load runtimes from a CSV file."""
     if not os.path.exists(filename):
         print(f"Error: {filename} does not exist, regenerating data...")

@@ -1,6 +1,7 @@
 import json
 import csv
 import os
+import re
 
 CATEGORY_DISPLAY_NAMES = {
     'double': 'FP64',
@@ -12,67 +13,73 @@ CATEGORY_DISPLAY_NAMES = {
     'flx::floatx<5, 2>': 'E5M2'
 }
 
-JSON_FILES = [
-    'prec_setting_1.json',
-    'prec_setting_2.json',
-    'prec_setting_3.json',
-    'prec_setting_4.json'
-]
-
-# Root directory to search for folders (use current directory if empty)
-ROOT_DIR = '.'  # Change to specific path if needed, e.g., '/path/to/folders'
+ROOT_DIR = '.'  # root folder
 
 # List to store data for the summary CSV
 summary_data = []
 
+# Regex to detect arbitrary JSON input files
+JSON_PATTERN = re.compile(r"prec_setting_([0-9]+)\.json$")
+
 # Get list of folders in ROOT_DIR
-folders = [f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f))]
+folders = [
+    f for f in os.listdir(ROOT_DIR)
+    if os.path.isdir(os.path.join(ROOT_DIR, f))
+]
 
 for folder in folders:
     if folder == "to-do":
         continue
+
     folder_path = os.path.join(ROOT_DIR, folder)
-    
-    # Check if all required JSON files exist in the folder
-    all_files_present = True
-    for json_file in JSON_FILES:
-        if not os.path.isfile(os.path.join(folder_path, json_file)):
-            print(f"Warning: File {json_file} not found in {folder_path}, skipping folder.")
-            all_files_present = False
-            break
-    
-    if not all_files_present:
+
+    # Detect all matching JSON files in this folder
+    json_files = []
+    for file in os.listdir(folder_path):
+        match = JSON_PATTERN.match(file)
+        if match:
+            index = int(match.group(1))
+            json_files.append((index, file))
+
+    # No matching files → skip folder
+    if not json_files:
+        print(f"No prec_setting_<i>.json files found in {folder_path}, skipping folder.")
         continue
-    
-    # Initialize table_data for per-folder CSV
+
+    # Sort by extracted index (prec_setting_i.json where i increases)
+    json_files.sort(key=lambda x: x[0])
+
     table_data = []
-    
-    for file_idx, json_file in enumerate(JSON_FILES, 1):
+
+    for idx, json_file in json_files:
         file_path = os.path.join(folder_path, json_file)
+
+        # Read JSON
         try:
             with open(file_path, 'r') as f:
                 data = json.load(f)
-        except FileNotFoundError:
-            print(f"Warning: File {file_path} not found, skipping.")
-            continue
-        except json.JSONDecodeError:
-            print(f"Warning: File {file_path} is not a valid JSON, skipping.")
+        except (FileNotFoundError, json.JSONDecodeError):
+            print(f"Warning: Failed to read {file_path}, skipping.")
             continue
 
-        # Process each dictionary in the file
+        # Process data entries
         for dict_idx, entry in enumerate(data, 1):
-            row = [file_idx, dict_idx]  # Columns for Precision Setting and Significant Digits
-            summary_row = [folder, file_idx, dict_idx]  # Columns for summary: Folder, Precision Setting, Significant Digits
+            row = [idx, dict_idx]   # Precision Setting, Significant Digits
+            summary_row = [folder, idx, dict_idx]
+
             for key, display_name in CATEGORY_DISPLAY_NAMES.items():
-                count = len(entry.get(key, []))  # Get length of list for key, default to 0 if missing
+                count = len(entry.get(key, []))
                 row.append(count)
                 summary_row.append(count)
-            table_data.append(row)
-            summary_data.append(summary_row)  # Add to summary data
 
-    # Generate per-folder CSV
+            table_data.append(row)
+            summary_data.append(summary_row)
+
+    # Write per-folder CSV
     if table_data:
-        headers = ['Precision Setting', 'Significant Digits'] + [CATEGORY_DISPLAY_NAMES[key] for key in CATEGORY_DISPLAY_NAMES]
+        headers = ['Precision Setting', 'Significant Digits'] + \
+                  [CATEGORY_DISPLAY_NAMES[key] for key in CATEGORY_DISPLAY_NAMES]
+
         output_csv = os.path.join(folder_path, 'fp_counts_all.csv')
         with open(output_csv, 'w', newline='') as f:
             writer = csv.writer(f)
@@ -80,16 +87,19 @@ for folder in folders:
             writer.writerows(table_data)
         print(f"Generated CSV: {output_csv}")
     else:
-        print(f"No valid data found in {folder_path}, skipping CSV creation.")
+        print(f"No valid JSON data in {folder_path}, skipping CSV creation.")
 
-# Generate summary CSV
+# Write global summary CSV
 if summary_data:
-    summary_headers = ['Folder', 'Precision Setting', 'Significant Digits'] + [CATEGORY_DISPLAY_NAMES[key] for key in CATEGORY_DISPLAY_NAMES]
+    summary_headers = ['Folder', 'Precision Setting', 'Significant Digits'] + \
+                      [CATEGORY_DISPLAY_NAMES[key] for key in CATEGORY_DISPLAY_NAMES]
+
     summary_csv = os.path.join(ROOT_DIR, 'fp_counts_summary.csv')
     with open(summary_csv, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(summary_headers)
         writer.writerows(summary_data)
+
     print(f"Generated Summary CSV: {summary_csv}")
 else:
-    print("No valid data found across all folders, skipping summary CSV creation.")
+    print("No valid data found across folders, skipping summary CSV.")
