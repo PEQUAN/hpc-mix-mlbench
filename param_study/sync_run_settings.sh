@@ -6,6 +6,10 @@
 # - If no folder paths are specified, all subdirectories in the current folder are used
 #   and the operation is applied to their subdirectories.
 # - If folder paths ARE provided, only the sub-subdirectories of those folders are modified.
+# ------------------------------------------------------------
+# Author: Xinye Chen (xinyechenai@gmail.com)
+# Last Updated: November 18, 2025
+
 
 DO_DELETE=false
 DO_COPY=false

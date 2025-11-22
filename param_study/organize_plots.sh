@@ -12,6 +12,9 @@
 #     for all i that exist
 #   Into a top-level 'param_plots/' directory (creates if missing).
 # ------------------------------------------------------------
+# Author: Xinye Chen (xinyechenai@gmail.com)
+# Last Updated: November 18, 2025
+# ------------------------------------------------------------
 
 TARGET_TOP_FOLDERS=("$@")
 

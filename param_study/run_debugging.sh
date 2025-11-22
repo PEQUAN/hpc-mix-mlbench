@@ -4,8 +4,12 @@
 #   ./broadcast_rename_debug.sh [--remove] [--broadcast] [--execute] [--parallel] [folders...]
 #
 # Short options can be bundled: -rbxp
-# If folders are provided, only those directories are processed.
-# If no folders are provided, operates on **sub-subdirectories only** (./*/*).
+# If folders are provided, only their immediate subdirectories are processed.
+# If no folders are provided, operates on **subdirectories of subdirectories** of current location (depth = 2).
+# ------------------------------------------------------------
+# Author: Xinye Chen (xinyechenai@gmail.com)
+# Last Updated: November 18, 2025
+# ---------------------------------------
 
 REMOVE=false
 BROADCAST=false
@@ -41,7 +45,6 @@ for arg in "$@"; do
     fi
 done
 
-# Remaining arguments are folder paths (if any)
 TARGET_DIRS=("${POSITIONAL[@]}")
 
 # ---------------------------------------
@@ -62,20 +65,23 @@ fi
 # ---------------------------------------
 # Determine target directories
 # ---------------------------------------
+SUBDIRS=()
 if [ ${#TARGET_DIRS[@]} -gt 0 ]; then
-    echo "Using explicitly provided target directories:"
+    echo "Using explicitly provided folders → will process their immediate subdirectories:"
     for t in "${TARGET_DIRS[@]}"; do
-        echo " - $t"
         if [ ! -d "$t" ]; then
             echo "Error: $t is not a directory."
             exit 1
         fi
+        # Immediate subdirectories (depth = 1 relative to t)
+        mapfile -t subsubs < <(find "$t" -mindepth 1 -maxdepth 1 -type d)
+        for s in "${subsubs[@]}"; do
+            echo " - $s"
+        done
+        SUBDIRS+=("${subsubs[@]}")
     done
-    SUBDIRS=("${TARGET_DIRS[@]}")
 else
-    echo "No folders provided → using **sub-subdirectories only**."
-
-    # Only sub-subdirectories (depth = 2)
+    echo "No folders provided → using subdirectories of subdirectories of current location (depth = 2)."
     mapfile -t SUBDIRS < <(
         find . -mindepth 2 -maxdepth 2 -type d ! -path "./run_settings" ! -path "."
     )
@@ -86,7 +92,7 @@ if [ ${#SUBDIRS[@]} -eq 0 ]; then
     exit 1
 fi
 
-echo "Target directories:"
+echo "Target directories to process:"
 printf ' - %s\n' "${SUBDIRS[@]}"
 
 # ---------------------------------------
@@ -101,15 +107,13 @@ for d in "${SUBDIRS[@]}"; do
     # Step 1 — Remove
     if $REMOVE; then
         if [ -f "$d/rename_debug.sh" ]; then
-            rm -f "$d/rename_debug.sh"
-            echo "Removed $d/rename_debug.sh"
+            rm -f "$d/rename_debug.sh" && echo "Removed $d/rename_debug.sh"
         fi
     fi
 
     # Step 2 — Broadcast
     if $BROADCAST; then
-        cp "$PARENT_SCRIPT" "$d"
-        echo "Broadcasted rename_debug.sh to $d"
+        cp "$PARENT_SCRIPT" "$d" && echo "Broadcasted rename_debug.sh to $d"
     fi
 
     # Step 3 — Execute
