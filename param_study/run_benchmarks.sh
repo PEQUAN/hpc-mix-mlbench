@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ------------------------------------------------------------
+# -------------------------------------------------------------------------------------------
 # Usage:
 #   ./run_benchmarks.sh <run_exp> <run_plot> [folder1 folder2 ...] [--parallel]
 #
@@ -13,7 +13,7 @@
 #     - run_setting_*.py (any number, run in numerical order)
 #     - promise.yml
 #     - prec_setting_1.json (only required if plotting and experiments are not run)
-# ------------------------------------------------------------
+# -------------------------------------------------------------------------------------------
 #
 # Author: Xinye Chen (xinyechenai@gmail.com)
 # Last Updated: 2025-11-21
@@ -44,17 +44,45 @@ normalize_bool() {
 RUN_EXPERIMENTS=$(normalize_bool "$RUN_EXPERIMENTS")
 RUN_PLOTTING=$(normalize_bool "$RUN_PLOTTING")
 
-# ---------- 3. Helper: run one folder ----------
+# ---------- 3. Check for at least one matching plot pair ----------
+check_plot_pairs() {
+    local dir="$1"
+
+    shopt -s nullglob
+    local prec_files=("$dir"/prec_setting_*.json)
+    local runtime_files=("$dir"/runtimes*.csv)
+    shopt -u nullglob
+
+    local matched_pairs=()
+    for prec in "${prec_files[@]}"; do
+        local base=$(basename "$prec")
+        if [[ $base =~ prec_setting_([0-9]+)\.json ]]; then
+            local i="${BASH_REMATCH[1]}"
+            if [[ -f "$dir/runtimes${i}.csv" ]]; then
+                matched_pairs+=("$i")
+            fi
+        fi
+    done
+
+    if (( ${#matched_pairs[@]} > 0 )); then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# ---------- 4. Run one folder ----------
 run_folder() {
     local dir="$1"
     echo "=== Processing folder: $dir ==="
 
-    # Check required data files
     missing_data=()
     [[ -f "$dir/promise.yml" ]] || missing_data+=("promise.yml")
-    
-    if [[ "$RUN_PLOTTING" == "true" && "$RUN_EXPERIMENTS" != "true" ]]; then
-        [[ -f "$dir/prec_setting_1.json" ]] || missing_data+=("prec_setting_1.json")
+
+    if [[ "$RUN_PLOTTING" == "true" ]]; then
+        if ! check_plot_pairs "$dir"; then
+            missing_data+=("prec_setting_*.json + runtimes*.csv (matching index required)")
+        fi
     fi
 
     if (( ${#missing_data[@]} > 0 )); then
@@ -64,8 +92,10 @@ run_folder() {
         return 1
     fi
 
-    # Find all run_setting_*.py scripts, sorted numerically
-    local scripts=($(find "$dir" -maxdepth 1 -name "run_setting_*.py" 2>/dev/null | sort -V))
+    shopt -s nullglob
+    scripts=("$dir"/run_setting_*.py)
+    shopt -u nullglob
+
     if (( ${#scripts[@]} == 0 )); then
         echo "  [No run_setting_*.py files found]"
         echo "  Skipping $dir"
@@ -73,9 +103,10 @@ run_folder() {
         return 1
     fi
 
-    # Run each script INSIDE the folder using basename to avoid duplicated paths
+    IFS=$'\n' scripts=($(printf "%s\n" "${scripts[@]}" | sort -V))
+
     for script in "${scripts[@]}"; do
-        script_name=$(basename "$script")
+        local script_name=$(basename "$script")
         echo "  → Running: $script_name"
         (
             cd "$dir" || exit
@@ -90,32 +121,28 @@ run_folder() {
     echo
 }
 
-# Export functions/vars for parallel
-export -f normalize_bool run_folder
+export -f run_folder normalize_bool check_plot_pairs
 export RUN_EXPERIMENTS RUN_PLOTTING
 
-# ---------- 4. Determine sub-subdirectories ----------
-echo "=========================================="
-echo "Run experiments : $RUN_EXPERIMENTS"
-echo "Run plotting    : $RUN_PLOTTING"
-echo "Parallel mode   : $PARALLEL"
-
-# Collect sub-subdirectories
+# ---------- 5. Collect sub-subdirectories ----------
 TARGET_FOLDERS=()
+
 if (( ${#TARGET_TOP_FOLDERS[@]} == 0 )); then
-    # No top-level folders specified → all subdirectories in current dir
     for folder in */; do
         folder="${folder%/}"
         [ -d "$folder" ] || continue
         mapfile -t subs < <(find "$folder" -mindepth 1 -maxdepth 1 -type d)
-        TARGET_FOLDERS+=("${subs[@]}")
+        for d in "${subs[@]}"; do
+            TARGET_FOLDERS+=( "$(realpath "$d")" )
+        done
     done
 else
-    # Use provided top-level folders → collect their subdirectories
     for folder in "${TARGET_TOP_FOLDERS[@]}"; do
         [[ -d "$folder" ]] || { echo "Warning: '$folder' not found. Skipping."; continue; }
         mapfile -t subs < <(find "$folder" -mindepth 1 -maxdepth 1 -type d)
-        TARGET_FOLDERS+=("${subs[@]}")
+        for d in "${subs[@]}"; do
+            TARGET_FOLDERS+=( "$(realpath "$d")" )
+        done
     done
 fi
 
@@ -124,26 +151,19 @@ if (( ${#TARGET_FOLDERS[@]} == 0 )); then
     exit 1
 fi
 
+echo "=========================================="
+echo "Run experiments : $RUN_EXPERIMENTS"
+echo "Run plotting    : $RUN_PLOTTING"
+echo "Parallel mode   : $PARALLEL"
 echo "Sub-subdirectories to process:"
 printf ' - %s\n' "${TARGET_FOLDERS[@]}"
 echo "=========================================="
 
-# ---------- 5. Run folders ----------
-if [[ "$PARALLEL" == "true" ]]; then
-    if command -v parallel >/dev/null 2>&1; then
-        echo "Running ${#TARGET_FOLDERS[@]} folders in parallel (max 4 jobs)..."
-        printf '%s\n' "${TARGET_FOLDERS[@]}" | parallel -j 4 run_folder {}
-    else
-        echo "GNU parallel not found. Falling back to sequential execution."
-        for dir in "${TARGET_FOLDERS[@]}"; do
-            run_folder "$dir"
-        done
-    fi
+# ---------- 6. Run folders ----------
+if [[ "$PARALLEL" == "true" ]] && command -v parallel >/dev/null 2>&1; then
+    printf '%s\n' "${TARGET_FOLDERS[@]}" | parallel -j 4 run_folder {}
 else
-    echo "Running ${#TARGET_FOLDERS[@]} folders sequentially..."
-    for dir in "${TARGET_FOLDERS[@]}"; do
-        run_folder "$dir"
-    done
+    for dir in "${TARGET_FOLDERS[@]}"; do run_folder "$dir"; done
 fi
 
 echo "=========================================="

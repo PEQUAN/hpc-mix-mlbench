@@ -10,7 +10,7 @@
 #   Moves and renames:
 #     precision<i>_with_runtime.jpg → precision<i>_<folder>_runtime.jpg
 #     for all i that exist
-#   Into a top-level 'plots/' directory (creates if missing).
+#   Into a top-level 'param_plots/' directory (creates if missing).
 # ------------------------------------------------------------
 
 TARGET_TOP_FOLDERS=("$@")
@@ -19,7 +19,7 @@ TARGET_TOP_FOLDERS=("$@")
 process_folder() {
     local dir="$1"
     local folder_name=$(basename "$dir")
-    local plots_dir="./plots"
+    local plots_dir="./param_plots/"
 
     echo "=== Processing folder: $dir ==="
 
@@ -90,7 +90,7 @@ fi
 
 echo "Sub-subdirectories to process:"
 printf ' - %s\n' "${TARGET_FOLDERS[@]}"
-echo "Destination: plots/"
+echo "Destination: param_plots/"
 echo "=========================================="
 
 # ---------- Process folders ----------
@@ -99,5 +99,5 @@ for dir in "${TARGET_FOLDERS[@]}"; do
 done
 
 echo "=========================================="
-echo "All done! Check 'plots/' for organized files."
+echo "All done! Check 'param_plots/' for organized files."
 echo "=========================================="

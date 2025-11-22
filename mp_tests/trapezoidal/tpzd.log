@@ -1,15 +1,15 @@
-11/21 10:42:07: 🤘 cadnaPromise 🤘
-11/21 10:42:07: Using the compiler: g++
-11/21 10:42:07: We are working with 1 file and 54 different types
-11/21 10:42:07: The expectation is 10 digits.
-11/21 10:42:07: a) Get a reference result with cadna (double)
-11/21 10:42:10: b) Check with highest format (Double)
-11/21 10:42:10: c) Delta-Debug Single/Double
-11/21 10:44:13: d) Delta-Debug bfloat16/Single
-11/21 10:44:14: The format flx::floatx<8, 7> is enough for your expectation
-11/21 10:44:14: e) Delta-Debug custom(4, 3)/bfloat16
-11/21 10:44:15: The format flx::floatx<4, 3> is enough for your expectation
-11/21 10:44:15: The final result contains 43x double and 11x flx::floatx<4, 3>.
-11/21 10:44:15: It tooks 127.88s
-11/21 10:44:15: 👉 177 compilations (152 failed) for 110.58s
-11/21 10:44:15: 👉 25 executions   (0 failed) for 2.03s
+11/21 16:41:50: 🤘 cadnaPromise 🤘
+11/21 16:41:50: Using the compiler: g++
+11/21 16:41:50: We are working with 1 file and 54 different types
+11/21 16:41:50: The expectation is 10 digits.
+11/21 16:41:50: a) Get a reference result with cadna (double)
+11/21 16:41:52: b) Check with highest format (Double)
+11/21 16:41:53: c) Delta-Debug Single/Double
+11/21 16:43:51: d) Delta-Debug bfloat16/Single
+11/21 16:43:52: The format flx::floatx<8, 7> is enough for your expectation
+11/21 16:43:52: e) Delta-Debug custom(5, 2)/bfloat16
+11/21 16:43:53: The format flx::floatx<5, 2> is enough for your expectation
+11/21 16:43:53: The final result contains 43x double and 11x flx::floatx<5, 2>.
+11/21 16:43:53: It tooks 123.42s
+11/21 16:43:53: 👉 177 compilations (152 failed) for 106.02s
+11/21 16:43:53: 👉 25 executions   (0 failed) for 1.92s
