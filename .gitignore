@@ -18,6 +18,5 @@ mp_tests/kmeans/*.csv
 mp_tests/mlp/*.csv
 mp_tests/mlp_reg/*.csv
 mp_tests/randomforest/*.csv
-**/*prec*/**
 mp_tests/plots/*
 param_study/param_plots/*.jpg
