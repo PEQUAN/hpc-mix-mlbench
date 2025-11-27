@@ -1,7 +1,0 @@
-compile:
-- g++ hotspot.cpp -frounding-math -m64 -o hotspot.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
-
-run: hotspot.out 512 512 2 temp_512 power_512 output.txt
-files: hotspot.cpp
-log: hotspot.log
-output: debug/
