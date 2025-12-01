@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <limits>
-#include <vector> // Added for diagonal preconditioner
+#include <vector> 
 
 struct CSRMatrix {
     int n;
@@ -65,8 +65,6 @@ CSRMatrix read_mtx_file(const std::string& filename) {
             i--; j--;
             entries[entry_count++] = {i, j, val};
             nnz_per_row[i]++;
-            // Changed: Do not __PROMISE__ off-diagonal entries
-            // Assume psmigr_2 provides lower triangle; we'll check symmetry later
         }
     } catch (...) {
         delete[] entries;
@@ -196,7 +194,6 @@ __PROMISE__ compute_forward_error(const __PROMISE__* x, int n) {
     return forward_error;
 }
 
-// New: Diagonal (Jacobi) preconditioner
 void apply_diag_precond(const CSRMatrix& A, const __PROMISE__* r, __PROMISE__* z, int n) {
     std::vector<__PROMISE__> diag(n, 0.0);
     for (int i = 0; i < n; ++i) {
@@ -217,7 +214,7 @@ void apply_diag_precond(const CSRMatrix& A, const __PROMISE__* r, __PROMISE__* z
 
 void arnoldi_step(const CSRMatrix& A, const __PROMISE__* r, __PROMISE__* V, __PROMISE__* H, int j, int n,
                   __PROMISE__* w, __PROMISE__* z, __PROMISE__ initial_norm, int restart) {
-    apply_diag_precond(A, &V[j * n], z, n); // Changed: Use diagonal preconditioner
+    apply_diag_precond(A, &V[j * n], z, n); 
     matvec(A, z, w);
     for (int i = 0; i <= j; ++i) {
         __PROMISE__ h_ij = dot(w, &V[i * n], n);
@@ -225,10 +222,9 @@ void arnoldi_step(const CSRMatrix& A, const __PROMISE__* r, __PROMISE__* V, __PR
         axpy(-h_ij, &V[i * n], w, n, w);
     }
     __PROMISE__ h_jp1_j = norm(w, n);
-    double check_point = 1e-12;
+    __PROMISE__ check_point = 1e-12;
     H[(j + 1) * restart + j] = h_jp1_j;
-    if (h_jp1_j < check_point * initial_norm) {
-        // Changed: Warn but continue with normalization
+    if (h_jp1_j < check_point) {
         std::cerr << "Warning: Small h_jp1_j at iteration " << j << ", continuing..." << std::endl;
         h_jp1_j = max(h_jp1_j, check_point); // Prevent division by zero
     }
@@ -238,7 +234,7 @@ void arnoldi_step(const CSRMatrix& A, const __PROMISE__* r, __PROMISE__* V, __PR
     }
 }
 
-Result gmres(const CSRMatrix& A, const __PROMISE__* b, int max_iter, double tol, int restart) {
+Result gmres(const CSRMatrix& A, const __PROMISE__* b, int max_iter, __PROMISE__ tol, int restart) {
     int n = A.n;
     Result result = {new __PROMISE__[n](), 0.0, 0, nullptr, 0};
     if (!result.x) throw std::runtime_error("Memory allocation failed");
@@ -282,8 +278,8 @@ Result gmres(const CSRMatrix& A, const __PROMISE__* b, int max_iter, double tol,
     std::copy(b, b + n, r);
     __PROMISE__ initial_norm = norm(r, n);
     std::cout << "Initial norm of residual: " << initial_norm << std::endl;
-    double check_point = 1e-16;
-    double tol_abs = tol * max(initial_norm, check_point);
+    __PROMISE__ check_point = 1e-16;
+    __PROMISE__ tol_abs = tol * max(initial_norm, check_point);
 
     int total_iterations = 0;
     while (total_iterations < max_iter) {
@@ -306,7 +302,7 @@ Result gmres(const CSRMatrix& A, const __PROMISE__* b, int max_iter, double tol,
         bool breakdown = false;
         try {
             for (j = 0; j < restart && total_iterations < max_iter; ++j) {
-                arnoldi_step(A, r, V, H, j, n, w, z, initial_norm, restart); // Changed: Pass r
+                arnoldi_step(A, r, V, H, j, n, w, z, initial_norm, restart); 
 
                 for (int i = 0; i < j; ++i) {
                     __PROMISE__ temp = cs[i] * H[i * restart + j] + sn[i] * H[(i + 1) * restart + j];
@@ -316,7 +312,7 @@ Result gmres(const CSRMatrix& A, const __PROMISE__* b, int max_iter, double tol,
                 __PROMISE__ a = H[j * restart + j];
                 __PROMISE__ b1 = H[(j + 1) * restart + j];
                 __PROMISE__ rho = sqrt(a * a + b1 * b1);
-                if (rho < 1e-12 * initial_norm) {
+                if (rho < 1e-12) {
                     std::cerr << "Warning: Givens rotation breakdown at iteration " << total_iterations << std::endl;
                     breakdown = true;
                     break;
@@ -357,7 +353,7 @@ Result gmres(const CSRMatrix& A, const __PROMISE__* b, int max_iter, double tol,
             for (int k = i + 1; k < j; ++k) {
                 y[i] -= H[i * restart + k] * y[k];
             }
-            if (abs(H[i * restart + i]) < 1e-12 * initial_norm) {
+            if (abs(H[i * restart + i]) < 1e-12) {
                 std::cerr << "Warning: Least-squares breakdown at iteration " << total_iterations << std::endl;
                 breakdown = true;
                 break;
@@ -367,7 +363,7 @@ Result gmres(const CSRMatrix& A, const __PROMISE__* b, int max_iter, double tol,
 
         if (!breakdown) {
             for (int k = 0; k < j; ++k) {
-                apply_diag_precond(A, &V[k * n], z, n); // Changed: Use diagonal preconditioner
+                apply_diag_precond(A, &V[k * n], z, n); 
                 axpy(y[k], z, result.x, n, result.x);
             }
         }
@@ -408,7 +404,7 @@ int main(int argc, char* argv[]) {
 
         // Changed: Looser tolerance, smaller restart
         int max_iter = (argc > 2) ? std::stoi(argv[2]) : A.n;
-        double tol = (argc > 3) ? std::stod(argv[3]) : 1e-8;
+        __PROMISE__ tol = (argc > 3) ? std::stod(argv[3]) : 1e-8;
         int restart = (argc > 4) ? std::stoi(argv[4]) : 100;
 
         auto start = std::chrono::high_resolution_clock::now();
@@ -420,9 +416,10 @@ int main(int argc, char* argv[]) {
         for (int i = 0; i < A.n; ++i) {
             check_x[i] = result.x[i];
         }
-        
+
         PROMISE_CHECK_ARRAY(check_x, A.n);
-        double forward_error = compute_forward_error(result.x, A.n);
+        
+        __PROMISE__ forward_error = compute_forward_error(result.x, A.n);
 
         std::cout << "Matrix size: " << A.n << " x " << A.n << std::endl;
         std::cout << "Training time: " << duration.count() << " ms" << std::endl;
@@ -430,11 +427,11 @@ int main(int argc, char* argv[]) {
         std::cout << "Forward error (||x - x_true||): " << forward_error << std::endl;
         std::cout << "Iterations to converge: " << result.iterations << std::endl;
 
-        double* r = new double[A.n]();
+        __PROMISE__* r = new __PROMISE__[A.n]();
         if (!r) throw std::runtime_error("Memory allocation failed");
         matvec(A, result.x, r);
         axpy(-1.0, r, b, A.n, r);
-        double verify_residual = norm(r, A.n);
+        __PROMISE__ verify_residual = norm(r, A.n);
         std::cout << "Verification residual: " << verify_residual << std::endl;
         delete[] r;
 

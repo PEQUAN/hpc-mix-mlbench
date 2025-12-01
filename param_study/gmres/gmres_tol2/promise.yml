@@ -1,5 +1,5 @@
 compile:
-- g++ pgmres.cpp -frounding-math -m64 -o pgmres.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
+- g++ -O3 pgmres.cpp -frounding-math -m64 -o pgmres.out -lcadnaC -L$CADNA_PATH/lib -I$CADNA_PATH/include
 
 run: pgmres.out
 files: pgmres.cpp
