@@ -6,8 +6,7 @@ import re
 CATEGORY_DISPLAY_NAMES = {
     'double': 'FP64',
     'float': 'FP32',
-    'half_float::half': 'FP16',
-    'flx::floatx<10, 5>': 'FP16',
+    'flx::floatx<5, 10>': 'FP16',
     'flx::floatx<8, 7>': 'BF16',
     'flx::floatx<4, 3>': 'E4M3',
     'flx::floatx<5, 2>': 'E5M2'
