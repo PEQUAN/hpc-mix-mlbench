@@ -1,0 +1,1 @@
+docker build -t promise-dev -f docker/Dockerfile .
