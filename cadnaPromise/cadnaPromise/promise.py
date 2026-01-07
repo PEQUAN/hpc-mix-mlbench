@@ -54,13 +54,15 @@ regDump = re.compile(r"^\[PROMISE_DUMP\] (\w+)(?:\[(\d+)\])? = ([\w\-+.]+)")
 
 def _copy_resource(rel_path: str, dest_dir: str, preserve_mode: bool = False):
     """Copy a package data file to destination, preserving executable bit if requested."""
-    resource = files(__name__).joinpath(rel_path)
+    resource = files(__package__.split('.')[0]).joinpath(rel_path)
     with as_file(resource) as src_path:
         cmd = ['cp']
         if preserve_mode:
             cmd.append('-p')
         cmd += [str(src_path), dest_dir]
         runCommand(cmd)
+
+
 
 
 class Promise:
