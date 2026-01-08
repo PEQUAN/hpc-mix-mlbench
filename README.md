@@ -56,7 +56,6 @@ projects/
 │   └── promise.yml                 <- required (generated or pre-existing)
 ├── setB/
 │   └── (same files as above)
-├── incomplete_set/                 <- will be skipped (missing files)
 ├── run_benchmarks.sh               <- main benchmark script
 
 
