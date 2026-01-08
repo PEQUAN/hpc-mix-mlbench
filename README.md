@@ -51,9 +51,11 @@ projects/
 │   ├── run_setting_1.py
 │   ├── ......
 │   ├── run_setting_k.py
-│   ├── prec_setting_1.json   <- required (generated or pre-existing)
+│   ├── C/C++ code to be examined
+│   ├── fp.json               <- floating point format defined by users or left as default
+│   ├── prec_setting_1.json   <- results by PROMISE
 │   ├── ......
-│   ├── prec_setting_k.json   <- required (generated or pre-existing)
+│   ├── prec_setting_k.json   <- results by PROMISE
 │   └── promise.yml                 <- required (generated or pre-existing)
 ├── setB/
 │   └── (same files as above)
